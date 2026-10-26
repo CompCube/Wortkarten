@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/* Sistema visual "tinta + retolador": docs/ui/tokens.md.
+   Escales Radix: slate per a la interfície, amber com a únic accent,
+   blue/red/green només per als articles (der/die/das). */
+
+:root {
+  --bg: #f9f9fb;
+  --surface: #ffffff;
+  --border: #e0e1e6;
+  --text: #1c2024;
+  --text-muted: #60646c;
+  --accent: #ffc53d;
+  --accent-text: #1c2024;
+  --der: #0d74ce;
+  --die: #ce2c31;
+  --das: #2a7e3b;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111113;
+    --surface: #18191b;
+    --border: #363a3f;
+    --text: #edeef0;
+    --text-muted: #b0b4ba;
+    --accent: #ffc53d;
+    --accent-text: #1c2024;
+    --der: #70b8ff;
+    --die: #ff9592;
+    --das: #71d083;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #111113;
+  --surface: #18191b;
+  --border: #363a3f;
+  --text: #edeef0;
+  --text-muted: #b0b4ba;
+  --accent: #ffc53d;
+  --accent-text: #1c2024;
+  --der: #70b8ff;
+  --die: #ff9592;
+  --das: #71d083;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-der: var(--der);
+  --color-die: var(--die);
+  --color-das: var(--das);
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}

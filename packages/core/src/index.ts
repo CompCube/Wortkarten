@@ -1,0 +1,1 @@
+export { normalizeTerm } from "./terms";

@@ -10,6 +10,7 @@ coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+next-env.d.ts
 .vercel/
 
 # secrets: mai al repo
@@ -29,3 +30,6 @@ Thumbs.db
 
 # configuració local del diari (ruta del vault)
 .claude/hooks/diari.config.json
+
+# volcats d'interfície de Bash a Windows
+*.stackdump
