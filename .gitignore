@@ -1,0 +1,31 @@
+# dependències i builds
+node_modules/
+.next/
+out/
+dist/
+build/
+.expo/
+.turbo/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.vercel/
+
+# secrets: mai al repo
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Claude Code: notes locals i fitxers personals
+CLAUDE.local.md
+.claude/settings.local.json
+
+# sistema
+.DS_Store
+Thumbs.db
+
+# configuració local del diari (ruta del vault)
+.claude/hooks/diari.config.json

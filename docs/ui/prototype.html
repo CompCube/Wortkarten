@@ -1,0 +1,798 @@
+<title>Wortkarten</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,600;0,700;1,400&family=Chivo:wght@400;700&family=Cabin:ital,wght@0,400;0,600;0,700;1,400&family=Work+Sans:wght@500;600;700&family=PT+Sans+Caption:wght@400;700&display=swap">
+<style>
+/* Layout: phone-sized app centred on a quiet desk; on phones the app fills the screen. Ink + highlighter palette (Radix slate + amber). */
+:root{
+  --desk:#e8e8ec; --bg:#f9f9fb; --surface:#ffffff; --subtle:#f0f0f3; --hover:#e8e8ec;
+  --border:#d9d9e0; --border-strong:#cdced6; --fg:#1c2024; --fg2:#60646c; --fg3:#80838d;
+  --ink:#1c2024; --on-ink:#ffffff; --accent:#ffc53d; --on-accent:#1c2024; --accent-soft:#fff7c2; --accent-border:#f3d673; --accent-text:#ab6400;
+  --der:#0d74ce; --die:#ce2c31; --das:#2a7e3b; --ok:#2a7e3b; --ok-soft:#e9f6e9; --bad:#ce2c31; --bad-soft:#feebec; --info-soft:#e6f4fe; --warn:#cc4e00; --warn-soft:#ffefd6;
+  --on-ok:#ffffff; --ring-track:rgba(255,255,255,.14); --again:#ce2c31; --hard:#cc4e00; --good:#2a7e3b; --easy:#0d74ce; --frame:#1c2024; --shadow:0 2px 6px rgba(28,32,36,.06),0 14px 30px -10px rgba(28,32,36,.18);
+  --display:'Bricolage Grotesque',ui-rounded,system-ui,sans-serif; --body:'Atkinson Hyperlegible Next','Atkinson Hyperlegible',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --desk:#0b0b0d; --bg:#111113; --surface:#18191b; --subtle:#212225; --hover:#272a2d;
+  --border:#363a3f; --border-strong:#43484e; --fg:#edeef0; --fg2:#b0b4ba; --fg3:#777b84;
+  --ink:#edeef0; --on-ink:#111113; --accent-soft:#302008; --accent-border:#5c3d05; --accent-text:#ffca16;
+  --der:#70b8ff; --die:#ff9592; --das:#71d083; --ok:#71d083; --ok-soft:#1b2a1e; --bad:#ff9592; --bad-soft:#3b1219; --info-soft:#0d2847; --warn:#ffa057; --warn-soft:#331e0b;
+  --on-ok:#111113; --ring-track:rgba(17,17,19,.12); --again:#ff9592; --hard:#ffa057; --good:#71d083; --easy:#70b8ff; --frame:#2e3135; --shadow:0 2px 6px rgba(0,0,0,.4),0 14px 30px -10px rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --desk:#0b0b0d; --bg:#111113; --surface:#18191b; --subtle:#212225; --hover:#272a2d;
+  --border:#363a3f; --border-strong:#43484e; --fg:#edeef0; --fg2:#b0b4ba; --fg3:#777b84;
+  --ink:#edeef0; --on-ink:#111113; --accent-soft:#302008; --accent-border:#5c3d05; --accent-text:#ffca16;
+  --der:#70b8ff; --die:#ff9592; --das:#71d083; --ok:#71d083; --ok-soft:#1b2a1e; --bad:#ff9592; --bad-soft:#3b1219; --info-soft:#0d2847; --warn:#ffa057; --warn-soft:#331e0b;
+  --on-ok:#111113; --ring-track:rgba(17,17,19,.12); --again:#ff9592; --hard:#ffa057; --good:#71d083; --easy:#70b8ff; --frame:#2e3135; --shadow:0 2px 6px rgba(0,0,0,.4),0 14px 30px -10px rgba(0,0,0,.6); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--desk);color:var(--fg);font-family:var(--body);font-size:16px;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.stage{min-height:100%;display:flex;gap:40px;align-items:center;justify-content:center;padding-block:28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box}
+.device{width:390px;height:844px;border-radius:52px;border:10px solid var(--frame);background:var(--bg);overflow:hidden;position:relative;flex:none;box-shadow:0 30px 60px -20px rgba(0,0,0,.35)}
+.panel{width:240px;display:flex;flex-direction:column;gap:18px}
+.panel h1{font-family:var(--display);font-size:26px;margin:0;letter-spacing:-.02em}
+.panel p{margin:0;color:var(--fg2);font-size:14px;line-height:1.5}
+.panel .lbl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--fg2)}
+.jump{display:flex;flex-direction:column;gap:2px}
+.jump button{text-align:left;padding:8px 10px;border-radius:10px;font-size:14px;color:var(--fg)}
+.jump button:hover{background:var(--hover)}
+.jump button[aria-current="true"]{background:var(--surface);font-weight:700;box-shadow:0 0 0 1px var(--border)}
+@media (max-width:760px){
+  .stage{padding:0;display:block;height:100%}
+  .panel{display:none}
+  .device{width:100%;height:100%;border:0;border-radius:0;box-shadow:none}
+}
+/* app */
+.app{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg)}
+.status{height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font-weight:700;font-size:15px}
+.status .sys{display:flex;gap:6px;align-items:center}
+@media (max-width:760px){.status{display:none}}
+.top{display:flex;align-items:center;gap:8px;padding:8px 16px 8px 20px;min-height:56px;flex:none}
+.top h2{flex:1;margin:0;font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.02em}
+.streak{display:flex;gap:4px;align-items:center;background:var(--accent-soft);color:var(--accent-text);border-radius:999px;padding:6px 12px 6px 10px;font-weight:700;font-size:13px}
+.avatar{width:44px;height:44px;display:grid;place-items:center}
+.avatar span{width:38px;height:38px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:13px}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 20px 20px;display:flex;flex-direction:column;gap:16px;min-height:0}
+.tabs{flex:none;display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 8px calc(16px + env(safe-area-inset-bottom,0px))}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--fg2);min-height:52px}
+.tab .pill{width:56px;height:32px;border-radius:999px;display:grid;place-items:center;transition:background .15s}
+.tab[aria-current="page"]{color:var(--fg);font-weight:700}
+.tab[aria-current="page"] .pill{background:var(--accent-soft)}
+.tab.create{color:var(--fg)}
+.tab.create .pill{width:52px;height:36px;border-radius:14px;background:var(--accent);color:var(--on-accent);margin-top:-2px}
+.tab.create:hover .pill{filter:brightness(.96)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.card.raised{box-shadow:var(--shadow)}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--fg2)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:14px;font-weight:700;font-size:16px;padding:0 20px;width:100%;box-sizing:border-box;transition:transform .08s,filter .15s}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--ink);color:var(--on-ink)}
+.btn.accent{background:var(--accent);color:var(--on-accent)}
+.btn.secondary{background:var(--surface);border:1.5px solid var(--border-strong)}
+.btn.ghost{min-height:44px;text-decoration:underline;text-underline-offset:3px;font-size:15px}
+.btn:disabled{opacity:.45;cursor:default}
+.chip{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.row{display:flex;align-items:center;gap:12px}
+.muted{color:var(--fg2)}
+.small{font-size:13px}
+.h3{font-family:var(--display);font-weight:600;font-size:18px;margin:0}
+.der{color:var(--der)} .die{color:var(--die)} .das{color:var(--das)}
+.art{font-weight:600}
+.deck{display:flex;align-items:center;gap:12px;padding:14px 12px 14px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;text-align:left;width:100%}
+.deck:hover{background:var(--subtle)}
+.thumb{width:48px;height:48px;border-radius:14px;background:var(--subtle);display:grid;place-items:center;font-size:24px;flex:none}
+.bar{display:block;height:4px;border-radius:2px;background:var(--hover);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:2px}
+.due{background:var(--accent-soft);color:var(--accent-text);border-radius:999px;padding:3px 9px;font-size:13px;font-weight:700}
+.prog{display:flex;align-items:center;gap:12px}
+.prog .track{flex:1;height:6px;border-radius:3px;background:var(--hover);overflow:hidden}
+.prog .track i{display:block;height:100%;background:var(--ink);border-radius:3px;transition:width .3s}
+.iconbtn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:none}
+.iconbtn.round{border-radius:50%;background:var(--subtle)}
+.flash{position:relative;flex:1;min-height:0;perspective:1400px}
+.flash .face{position:absolute;inset:0;background:var(--surface);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;backface-visibility:hidden;transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+.flash .back{transform:rotateY(180deg)}
+.flash.flipped .front{transform:rotateY(-180deg)}
+.flash.flipped .back{transform:rotateY(0)}
+.flash .front{align-items:center;justify-content:center;gap:10px;cursor:pointer}
+.imgbox{height:130px;background:var(--subtle);display:grid;place-items:center;font-size:56px;flex:none}
+.word{font-family:var(--display);font-weight:700;font-size:38px;letter-spacing:-.02em;line-height:1.1;text-align:center}
+.tag{align-self:flex-start;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;background:var(--info-soft);color:var(--der)}
+.ex{border-left:3px solid var(--accent);padding-left:12px;display:flex;flex-direction:column;gap:2px}
+.ex b{font-weight:700}
+.rate{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 20px calc(20px + env(safe-area-inset-bottom,0px));flex:none}
+.rate button{min-height:60px;border-radius:14px;background:var(--subtle);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-weight:700}
+.rate button small{font-weight:400;font-size:12px;opacity:.75}
+
+.rate .good{background:var(--ok);color:var(--on-ok)}
+.rate .easy{background:var(--info-soft);color:var(--der);box-shadow:inset 0 0 0 1.5px var(--der)}
+.hint{text-align:center;color:var(--fg3);font-size:13px}
+.opt{min-height:58px;border-radius:14px;background:var(--surface);border:1.5px solid var(--border-strong);font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;gap:6px}
+.opt.ok{background:var(--ok-soft);border:2px solid var(--ok);color:var(--ok)}
+.opt.bad{background:var(--bad-soft);border:2px solid var(--bad);color:var(--bad)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fb{border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.fb.ok{background:var(--ok-soft)} .fb.ok b{color:var(--ok)}
+.fb.bad{background:var(--bad-soft)} .fb.bad b{color:var(--bad)}
+.gap{display:inline-block;min-width:4.5ch;border-bottom:3px solid var(--accent);color:var(--accent-text);text-align:center;padding:0 3px;line-height:1.2}
+.gap.ok{border-color:var(--ok);color:var(--ok)} .gap.bad{border-color:var(--bad);color:var(--bad)}
+.input{min-height:52px;border-radius:12px;border:1.5px solid var(--border-strong);background:var(--surface);padding:0 14px;font-size:17px;min-width:0;flex:1}
+.keys{display:flex;gap:6px}
+.keys button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:17px}
+.seg{display:flex;gap:4px;padding:4px;background:var(--subtle);border-radius:14px}
+.seg button{flex:1;min-height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:var(--fg2)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+textarea{width:100%;box-sizing:border-box;min-height:200px;border-radius:20px;border:2px solid var(--ink);background:var(--surface);padding:16px;font-size:19px;line-height:1.55;resize:none}
+.drop{border:2px dashed var(--border-strong);border-radius:20px;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;color:var(--fg2)}
+.drop strong{color:var(--fg)}
+.settings{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden}
+.settings .it{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 12px 0 16px;width:100%;text-align:left;box-sizing:border-box}
+.settings .it+.it{border-top:1px solid var(--border)}
+.settings .it span.grow{flex:1}
+.mini-seg{display:flex;gap:2px;padding:3px;background:var(--subtle);border-radius:10px}
+.mini-seg button{padding:5px 10px;border-radius:8px;font-size:13px;font-weight:600;color:var(--fg2)}
+.mini-seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg)}
+.draft{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.draft.warn{border:1.5px solid var(--warn)}
+.draft.off{opacity:.55}
+.check{width:28px;height:28px;border-radius:9px;border:1.5px solid var(--border-strong);display:grid;place-items:center;flex:none;color:var(--on-ink)}
+.check[aria-checked="true"]{background:var(--ink);border-color:var(--ink)}
+.note{border-radius:10px;padding:7px 10px;font-size:13px;line-height:1.4;background:var(--info-soft)}
+.pick{min-height:40px;padding:0 12px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-weight:700;font-size:14px}
+.foot{flex:none;padding:12px 20px calc(20px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--border)}
+.sheet-wrap{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;z-index:20}
+.sheet-wrap.anim{animation:fade .2s}
+.sheet-wrap:not(.anim) .sheet{animation:none}
+.sheet{background:var(--bg);width:100%;border-radius:24px 24px 0 0;padding:10px 20px calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px;max-height:80%;overflow-y:auto;animation:up .25s cubic-bezier(.2,.7,.2,1)}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--border-strong);align-self:center}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+@keyframes fade{from{opacity:0}}
+.toast{position:absolute;left:20px;right:20px;bottom:110px;background:var(--ink);color:var(--on-ink);border-radius:14px;padding:14px 16px;font-weight:700;display:flex;gap:10px;align-items:center;z-index:30;animation:up .25s}
+.gen{position:absolute;inset:0;background:var(--bg);z-index:25;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:32px;text-align:center}
+.gen ol{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px;text-align:left}
+.gen li{display:flex;gap:10px;align-items:center;color:var(--fg3);font-weight:600}
+.gen li.on{color:var(--fg)} .gen li.done{color:var(--fg2)}
+.gen .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--border-strong);display:grid;place-items:center;flex:none}
+.gen li.done .dot{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.gen li.on .dot{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mark{background:linear-gradient(transparent 58%,var(--accent) 58%,var(--accent) 92%,transparent 92%);padding:0 2px;margin:0 -2px}
+:root[data-theme="dark"] .mark{color:var(--fg)}
+
+.textp .gap{cursor:pointer;min-width:6ch}
+.textp .gap.sel{background:var(--accent-soft);border-radius:4px 4px 0 0}
+.days{display:flex;justify-content:space-between}
+.day{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;color:var(--fg2)}
+.day b{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--subtle);color:var(--fg3);font-size:13px}
+.day.done b{background:var(--accent);color:var(--on-accent)}
+.day.today b{background:var(--surface);color:var(--fg);box-shadow:inset 0 0 0 2px var(--ink)}
+.lang{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:var(--surface);width:100%;text-align:left}
+.lang .code{width:40px;height:40px;border-radius:10px;background:var(--subtle);display:grid;place-items:center;font-weight:700;font-size:13px}
+.lang[aria-checked="true"]{background:var(--accent-soft);border:2px solid var(--accent);padding:13px 15px}
+.lang[aria-checked="true"] .code{background:var(--accent);color:var(--on-accent)}
+.radio{width:24px;height:24px;border-radius:50%;border:2px solid var(--border-strong);margin-left:auto;display:grid;place-items:center;flex:none}
+.lang[aria-checked="true"] .radio{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;flex-direction:column}
+.stat b{font-family:var(--display);font-size:24px;font-variant-numeric:tabular-nums}
+.stat.acc{background:var(--accent-soft);border-color:var(--accent-border)} .stat.acc b{color:var(--accent-text)}
+
+.hero{background:var(--ink);color:var(--on-ink);border-radius:24px;padding:18px 20px 20px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.ring{position:relative;width:128px;height:128px;flex:none}
+.ring-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ring-in b{font-family:var(--display);font-size:40px;font-weight:700;font-variant-numeric:tabular-nums}
+.ring-in span{font-size:13px;opacity:.75;margin-top:4px}
+.hero-eyebrow{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+.hero-sub{font-size:13px;opacity:.75}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;display:block}
+.back-in{padding:16px 18px 20px;display:flex;flex-direction:column;gap:10px;flex:none;box-sizing:border-box}
+.back-img{flex:1 1 0;min-height:64px;max-height:240px;background:var(--subtle);display:grid;place-items:center;position:relative;overflow:hidden;border-top:5px solid var(--g)}
+.back-img{container-type:size}
+.back-img span{font-size:min(84px,62cqh);line-height:1}
+.thumb.big{width:64px;height:64px;font-size:36px;border-radius:16px}
+.pile{position:relative;flex:1;min-height:0}
+.pile .flash{position:absolute;inset:0}
+.flash.under{transform:translateY(10px) scale(.95);opacity:.7;pointer-events:none}
+.flash.swipe{touch-action:pan-y;user-select:none;transition:transform .2s;--yes:0;--no:0}
+.flash.swipe.drag{transition:none;cursor:grabbing}
+.stamp{position:absolute;top:22px;padding:6px 12px;border-radius:10px;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.04em;border:3px solid;pointer-events:none;z-index:3}
+.stamp.yes{left:20px;color:var(--ok);border-color:var(--ok);opacity:var(--yes);transform:rotate(-10deg);background:var(--surface)}
+.stamp.no{right:20px;color:var(--bad);border-color:var(--bad);opacity:var(--no);transform:rotate(10deg);background:var(--surface)}
+.swipe-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 28px 12px;flex:none}
+.sbtn{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1.5px solid var(--border-strong)}
+.sbtn.no{color:var(--bad)} .sbtn.yes{color:var(--ok)}
+.sbtn:disabled{opacity:.35}
+.textp{font-size:16.5px;line-height:1.95}
+.view{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
+.view.enter{animation:viewIn .28s cubic-bezier(.2,.7,.2,1)}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}}
+.flash.enter{animation:cardIn .38s cubic-bezier(.2,.8,.2,1)}
+@keyframes cardIn{from{opacity:0;transform:translateX(36px) rotate(2deg) scale(.97)}}
+.rate.in button{animation:pop .3s cubic-bezier(.2,.8,.2,1) backwards}
+.rate.in button:nth-child(2){animation-delay:.04s}.rate.in button:nth-child(3){animation-delay:.08s}.rate.in button:nth-child(4){animation-delay:.12s}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}}
+.flash .face{transition:transform .55s cubic-bezier(.3,.7,.2,1)}
+.flash.under{transition:transform .3s}
+.kbd{display:none;font:600 11px/1 var(--body);padding:3px 5px;border-radius:5px;border:1px solid currentColor;opacity:.55;margin-left:6px}
+.keyhint{display:none}
+.hero-filter{align-self:flex-start;display:flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;background:var(--ring-track);color:var(--on-ink);font-size:13px;font-weight:600;margin:-4px 0 -6px}
+.webonly{display:none}
+.chrome{display:none}
+.stage.mode-web{flex-direction:column;align-items:center;gap:16px}
+.stage.mode-web .panel{width:auto;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:28px;max-width:1180px}
+.stage.mode-web .panel > div:first-child{width:260px}
+.stage.mode-web .jump{flex-direction:row;flex-wrap:wrap;max-width:520px}
+.stage.mode-web .device{width:min(1180px,100%);height:760px;border-radius:14px;border-width:1px;border-color:var(--border-strong);display:flex;flex-direction:column}
+.stage.mode-web .chrome{display:flex;align-items:center;gap:7px;height:40px;flex:none;padding:0 14px;background:var(--subtle);border-bottom:1px solid var(--border)}
+.chrome i{width:11px;height:11px;border-radius:50%;background:var(--border-strong)}
+.chrome span{margin-left:14px;flex:1;max-width:420px;background:var(--surface);border-radius:8px;padding:5px 12px;font-size:13px;color:var(--fg2)}
+.stage.mode-web .app{position:relative;inset:auto;flex:1;min-height:0}
+.app.is-web .status{display:none}
+.app.has-side{flex-direction:row}
+.app.has-side .tabs,.app.has-side .top .avatar{display:none}
+.app.wide .view > *:not(.sheet-wrap):not(.gen):not(.toast):not(.tabs){width:100%;max-width:820px;margin-inline:auto;box-sizing:border-box}
+.app.wide .kbd,.app.wide .keyhint{display:inline-block}
+.app.wide .today-grid{max-width:620px!important}
+.decks-block{display:flex;flex-direction:column;gap:12px}
+.app.wide .webonly{display:contents}
+.app.wide .sheet-wrap{align-items:center;justify-content:center}
+.app.wide .sheet{max-width:480px;border-radius:24px;max-height:86%}
+.app.wide .flash{max-height:560px}
+.side{width:232px;flex:none;border-right:1px solid var(--border);background:var(--surface);padding:18px 14px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
+.side-nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.side-nav button,.side-me{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:12px;font-weight:600;color:var(--fg2);width:100%;text-align:left}
+.side-nav button:hover,.side-me:hover{background:var(--subtle)}
+.side-nav button[aria-current="page"]{background:var(--accent-soft);color:var(--fg)}
+.side-me{padding:6px 8px;min-height:52px}
+.side-me[aria-current="page"]{background:var(--subtle)}
+.side-me .av{width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+@media (max-width:760px){.stage.mode-web .device{width:100%;height:100%;border:0;border-radius:0}.stage.mode-web .chrome{display:none}.app.has-side .side{display:none}.app.has-side .tabs{display:flex}.app.has-side .top .avatar{display:grid}}
+.grp{display:flex;flex-direction:column;gap:8px}
+.settings .it{min-height:48px}
+.app.wide .profile-grid{display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:16px}
+.app.wide .profile-grid > .row,.app.wide .profile-grid > .stats{grid-column:1 / -1}
+.app.wide .review-list{display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:10px}
+.app.wide .pile,.app.wide #flash{width:100%;max-width:600px;margin-inline:auto}
+.app.wide .swipe-bar{width:100%;max-width:600px;margin-inline:auto}
+.rhead{flex:none;padding:6px 16px 0 20px;display:flex;flex-direction:column;gap:10px}
+.themebtn{flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:46px;padding:0 12px 0 14px;border-radius:14px;background:var(--surface);border:1px solid var(--border);text-align:left}
+.themebtn .tb-k{font-size:13px;color:var(--fg2)}
+.themebtn .tb-v{font-weight:700;font-family:var(--display);font-size:17px;flex:0 1 auto;min-width:3.5em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.themebtn .tb-pos{font-size:12px;font-weight:700;background:var(--accent-soft);color:var(--accent-text);border-radius:999px;padding:3px 8px;white-space:nowrap;max-width:7.5em;overflow:hidden;text-overflow:ellipsis}
+.themebtn svg{margin-left:auto;flex:none;color:var(--fg2)}
+.counts{font-size:14px;color:var(--fg2);white-space:nowrap}
+.counts b{font-variant-numeric:tabular-nums}
+.ptrack{height:4px;border-radius:2px;background:var(--hover);overflow:hidden;margin-right:4px}
+.ptrack i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.rmeta{flex:none;padding:2px 22px 10px;font-size:12.5px;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--fg2)}
+.legend b{font-weight:700;margin-left:6px}
+.newtag{position:absolute;top:16px;right:16px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--easy);border:1px solid currentColor;border-radius:999px;padding:2px 8px}
+.foot0{padding:12px 20px 8px}
+.rate{padding:12px 20px 8px}
+.rate button{--c:var(--fg);background:color-mix(in srgb,var(--c) 10%,var(--surface));color:var(--c);border:1.5px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.rate .again{--c:var(--again)} .rate .hard{--c:var(--hard)} .rate .easy{--c:var(--easy)}
+.rate .good{--c:var(--good);background:var(--good);color:var(--bg);border-color:var(--good)}
+.chip.pos .n{color:var(--fg3);font-weight:600;margin-left:4px}
+.chip.pos[aria-pressed="true"] .n{color:inherit;opacity:.7}
+.chip:disabled{opacity:.4}
+.tlist{display:flex;flex-direction:column}
+.trow{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 6px;border-bottom:1px solid var(--border);text-align:left}
+.trow .nm{flex:1}
+.trow .n{color:var(--fg3);font-variant-numeric:tabular-nums;font-size:14px}
+.trow .due{background:var(--good);color:var(--bg)}
+.trow[aria-checked="true"]{font-weight:700}
+.tick{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--border-strong);display:grid;place-items:center;flex:none;color:var(--on-ink)}
+.trow[aria-checked="true"] .tick{background:var(--ink);border-color:var(--ink)}
+.app.wide .rhead,.app.wide #studyFoot,.app.wide .rmeta{width:100%;max-width:640px;margin-inline:auto}
+.app.has-side .rhead .avatar{display:none}
+.optbtn{background:var(--surface);border:1px solid var(--border)}
+.optgrp{display:flex;flex-direction:column;gap:8px}
+.optgrp .seg button{font-size:14px;min-height:44px}
+.switchrow{display:flex;align-items:center;gap:12px;min-height:44px;font-weight:600;text-align:left}
+.switch{width:46px;height:28px;border-radius:999px;background:var(--border-strong);position:relative;flex:none;transition:background .2s}
+.switch i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.switchrow[aria-checked="true"] .switch{background:var(--ink)}
+.switchrow[aria-checked="true"] .switch i{transform:translateX(18px)}
+.kbar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px}
+.kbar i{display:block;height:100%}
+.app.wide .prog-grid{display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:14px}
+.app.wide .prog-grid .hero{grid-row:span 2}
+.app.wide .prog-grid > .card:last-child{grid-column:1 / -1}
+.app.web-bottom .tabs{justify-content:center;gap:8px;padding-bottom:14px}
+.app.web-bottom .tab{flex:0 0 112px}
+.app.web-bottom .tab .pill{width:64px}
+.app.wide .refine-grid{display:grid;grid-template-columns:1fr 1fr;align-content:start;gap:16px}
+.app.wide .refine-grid > .card{grid-column:1 / -1}
+.app.wide .back-img{max-height:200px}
+.rh-av{display:none}
+.app.web-bottom .rh-av{display:grid}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="stage">
+  <aside class="panel" aria-label="Controls del prototip">
+    <div>
+      <h1>Wortkarten</h1>
+      <p>Prototip interactiu. Toca la targeta per girar-la, crea paraules amb la IA i practica frases i textos.</p>
+    </div>
+    <div>
+      <div class="lbl">Format</div>
+      <div class="mini-seg" id="viewSeg" style="margin-top:8px"></div>
+    </div>
+    <div id="navWrap" hidden>
+      <div class="lbl">Menú al web</div>
+      <div class="mini-seg" id="navSeg" style="margin-top:8px"></div>
+    </div>
+    <div>
+      <div class="lbl">Tema</div>
+      <div class="mini-seg" id="themeSeg" style="margin-top:8px"></div>
+    </div>
+    <div>
+      <div class="lbl">Tipografia</div>
+      <div class="mini-seg" id="fontSeg" style="margin-top:8px;flex-wrap:wrap"></div>
+      <p id="fontNote" style="margin-top:8px;font-size:13px"></p>
+    </div>
+    <div>
+      <div class="lbl">Pantalles</div>
+      <nav class="jump" id="jump" style="margin-top:8px"></nav>
+    </div>
+  </aside>
+  <div class="device"><div class="chrome" aria-hidden="true"><i></i><i></i><i></i><span id="url">wortkarten.app</span></div><div class="app" id="app"></div></div>
+</div>
+
+<script>
+const DATA = {"cards": [{"id": "vertrag", "theme": "Tràmits i diners", "img": "📄", "de": "Vertrag", "art": "der", "pl": "die Verträge", "ca": "el contracte", "en": "contract", "pos": "noun", "ex": [["Ich habe den Vertrag unterschrieben.", "He signat el contracte.", "Vertrag"], ["Mein Vertrag endet im Juni.", "El meu contracte s'acaba al juny.", "Vertrag"], ["Lies den Vertrag genau!", "Llegeix bé el contracte!", "Vertrag"]]}, {"id": "bart", "theme": "El cos", "img": "🧔", "de": "Bart", "art": "der", "pl": "die Bärte", "ca": "la barba", "en": "beard", "pos": "noun", "ex": [["Er hat einen langen Bart.", "Té una barba llarga.", "Bart"], ["Ich rasiere meinen Bart.", "M'afaito la barba.", "Bart"], ["Der Bart steht dir gut.", "La barba et queda bé.", "Bart"]]}, {"id": "wimper", "theme": "El cos", "img": "👁️", "de": "Wimper", "art": "die", "pl": "die Wimpern", "ca": "la pestanya", "en": "eyelash", "pos": "noun", "ex": [["Sie hat lange Wimpern.", "Té les pestanyes llargues.", "Wimpern"], ["Ich habe eine Wimper im Auge.", "Tinc una pestanya a l'ull.", "Wimper"], ["Ohne mit der Wimper zu zucken.", "Sense immutar-se.", "Wimper"]]}, {"id": "knie", "theme": "El cos", "img": "🧎", "de": "Knie", "art": "das", "pl": "die Knie", "ca": "el genoll", "en": "knee", "pos": "noun", "ex": [["Mein Knie tut weh.", "Em fa mal el genoll.", "Knie"], ["Er kniet auf den Knien.", "Està de genolls.", "kniet"], ["Die Hose ist am Knie kaputt.", "Els pantalons estan trencats al genoll.", "Knie"]]}, {"id": "kuendigen", "theme": "Tràmits i diners", "img": "✂️", "de": "kündigen", "extra": "hat gekündigt", "ca": "donar de baixa, rescindir; dimitir", "en": "to cancel; to quit", "note": "No vol dir prohibir (això és verbieten).", "pos": "verb", "ex": [["Ich kündige meinen Handyvertrag.", "Dono de baixa el contracte del mòbil.", "kündige"], ["Sie hat ihren Job gekündigt.", "Ha deixat la feina.", "gekündigt"], ["Man muss drei Monate vorher kündigen.", "S'ha de donar de baixa amb tres mesos d'antelació.", "kündigen"]]}, {"id": "verwenden", "theme": "Paraules útils", "img": "🔧", "de": "verwenden", "extra": "hat verwendet", "ca": "fer servir, utilitzar", "en": "to use", "note": "Una mica més formal que benutzen.", "pos": "verb", "ex": [["Welches Programm verwendest du?", "Quin programa fas servir?", "verwendest"], ["Ich verwende nur frische Tomaten.", "Només faig servir tomàquets frescos.", "verwende"], ["Dieses Wort verwendet man oft.", "Aquesta paraula es fa servir sovint.", "verwendet"]]}, {"id": "rechnung", "theme": "Tràmits i diners", "img": "🧾", "de": "Rechnung", "art": "die", "pl": "die Rechnungen", "ca": "la factura; el compte", "en": "invoice, bill", "pos": "noun", "ex": [["Die Rechnung, bitte!", "El compte, si us plau!", "Rechnung"], ["Ich habe die Rechnung bezahlt.", "He pagat la factura.", "Rechnung"], ["Die Rechnung ist zu hoch.", "La factura és massa alta.", "Rechnung"]]}, {"id": "fehler", "theme": "Estudis", "img": "❌", "de": "Fehler", "art": "der", "pl": "die Fehler", "ca": "l'error", "en": "mistake, error", "pos": "noun", "ex": [["Das war mein Fehler.", "Va ser culpa meva.", "Fehler"], ["Ich mache noch viele Fehler.", "Encara faig molts errors.", "Fehler"], ["Im Code ist ein Fehler.", "Hi ha un error al codi.", "Fehler"]]}, {"id": "gruenden", "theme": "Feina i professions", "img": "🌱", "de": "gründen", "extra": "hat gegründet", "ca": "fundar, crear (una empresa)", "en": "to found", "note": "Una família també: eine Familie gründen.", "pos": "verb", "ex": [["Sie hat eine Firma gegründet.", "Ha fundat una empresa.", "gegründet"], ["Ich möchte ein Start-up gründen.", "Vull crear una start-up.", "gründen"], ["Wann wurde die Stadt gegründet?", "Quan es va fundar la ciutat?", "gegründet"]]}, {"id": "vereinbaren", "theme": "Tràmits i diners", "img": "📅", "de": "vereinbaren", "extra": "hat vereinbart", "ca": "acordar, concertar", "en": "to arrange, to agree", "pos": "verb", "ex": [["Ich möchte einen Termin vereinbaren.", "Voldria demanar hora.", "vereinbaren"], ["Wir haben einen Preis vereinbart.", "Hem acordat un preu.", "vereinbart"], ["Wie vereinbart, komme ich um neun.", "Com vam quedar, vinc a les nou.", "vereinbart"]]}, {"id": "knoechel", "theme": "El cos", "img": "🩼", "de": "Knöchel", "art": "der", "pl": "die Knöchel", "ca": "el turmell", "en": "ankle", "pos": "noun", "ex": [["Ich habe mir den Knöchel verstaucht.", "M'he torçat el turmell.", "Knöchel"], ["Der Knöchel ist geschwollen.", "El turmell està inflat.", "Knöchel"], ["Das Wasser geht bis zum Knöchel.", "L'aigua arriba fins al turmell.", "Knöchel"]]}, {"id": "schulter", "theme": "El cos", "img": "🤷", "de": "Schulter", "art": "die", "pl": "die Schultern", "ca": "l'espatlla", "en": "shoulder", "pos": "noun", "ex": [["Er zuckt mit den Schultern.", "Arronsa les espatlles.", "Schultern"], ["Meine Schulter tut weh.", "Em fa mal l'espatlla.", "Schulter"], ["Er hat breite Schultern.", "Té les espatlles amples.", "Schultern"]]}, {"id": "zuverlaessig", "theme": "Caràcter", "img": "🛡️", "de": "zuverlässig", "ca": "fiable, de confiança", "en": "reliable", "pos": "adj", "ex": [["Sie ist sehr zuverlässig.", "És molt de fiar.", "zuverlässig"], ["Der Bus ist nicht zuverlässig.", "El bus no és fiable.", "zuverlässig"], ["Ich brauche ein zuverlässiges Auto.", "Necessito un cotxe fiable.", "zuverlässiges"]]}, {"id": "benoetigen", "theme": "Tràmits i diners", "img": "🧰", "de": "benötigen", "extra": "benötigt", "ca": "necessitar", "en": "to need", "pos": "verb", "ex": [["Ich benötige mehr Zeit.", "Necessito més temps.", "benötige"], ["Was benötigst du für den Kurs?", "Què necessites per al curs?", "benötigst"], ["Für das Visum benötigt man einen Pass.", "Per al visat es necessita un passaport.", "benötigt"]]}], "texts": [{"id": "t-arzt", "theme": "El cos", "title": "Beim Arzt", "text": "Seit drei Tagen tut mir der [[Rücken]] weh. Heute bin ich zum Arzt gegangen. Er hat mir in den [[Hals]] geschaut und meinen [[Puls]] gemessen. Dann hat er gefragt: „Haben Sie auch Schmerzen in der [[Schulter]]?“ Ich habe gesagt, dass mein linkes [[Knie]] auch ein bisschen weh tut, weil ich beim Joggen gefallen bin. Er hat mir eine [[Therapie]] empfohlen und gesagt, dass [[Wärme]] den Muskeln hilft.", "ca": "Fa tres dies que em fa mal l'esquena. Avui he anat al metge. M'ha mirat la gola i m'ha pres el pols. Després m'ha preguntat: \"També té dolor a l'espatlla?\" Li he dit que el genoll esquerre també em fa una mica de mal, perquè vaig caure fent footing. M'ha recomanat una teràpia i m'ha dit que l'escalfor ajuda els músculs."}, {"id": "t-fitness", "theme": "Salut i esport", "title": "Meine Fitnessuhr", "text": "Seit einem Monat habe ich eine Fitnessuhr. Sie zählt meine [[Schritte]] und [[misst]] den Blutdruck. Am Anfang habe ich [[ständig]] alles gecheckt. Die Uhr [[warnt]] mich, wenn ich mich zu sehr anstrenge. Ich mache jetzt [[regelmäßig]] Sport, aber manchmal mache ich mir trotzdem einen [[faulen]] Tag. [[Obwohl]] die Uhr das nicht mag!", "ca": "Fa un mes que tinc un rellotge esportiu. Em compta els passos i em pren la pressió. Al principi ho comprovava tot constantment. El rellotge m'avisa quan m'esforço massa. Ara faig esport regularment, però de vegades em faig igualment un dia de mandra. Encara que al rellotge no li agradi!"}, {"id": "t-wg", "theme": "Casa i vida diària", "title": "Leben in der WG", "text": "Ich wohne in einer [[WG]] in Salzburg. Die [[Lage]] ist perfekt: Die Bushaltestelle ist direkt vor dem Haus. Wir sind drei Leute und teilen die [[Miete]]. Jeden Abend kocht jemand. Gestern hat Anna das Fleisch [[gebraten]], aber Oli hat schon alles [[aufgegessen]], bevor ich nach Hause gekommen bin! Am Wochenende müssen alle ihre Sachen [[wegräumen]]. Das ist unsere wichtigste [[Gewohnheit]].", "ca": "Visc en un pis compartit a Salzburg. La ubicació és perfecta: la parada de bus és just davant de casa. Som tres persones i ens repartim el lloguer. Cada vespre algú cuina. Ahir l'Anna va fer la carn a la paella, però l'Oli ja s'ho havia menjat tot abans que jo arribés a casa! El cap de setmana tothom ha d'endreçar les seves coses. És el nostre costum més important."}, {"id": "t-amt", "theme": "Tràmits i diners", "title": "Neue Stadt, neue Papiere", "text": "Nach dem Umzug muss man viel organisieren. Zuerst habe ich meinen [[Personalausweis]] und eine [[Kopie]] vom Mietvertrag zum Amt gebracht. Dann musste ich mein Diplom [[anerkennen]] lassen. Ich weiß nicht, wer dafür [[zuständig]] ist. Außerdem will ich meinen alten Handyvertrag [[kündigen]] und einen neuen [[abschließen]]. Und am Ende kommt noch die [[Steuererklärung]]...", "ca": "Després de la mudança s'han d'organitzar moltes coses. Primer vaig portar el DNI i una còpia del contracte de lloguer a l'ajuntament. Després vaig haver d'homologar el meu títol. No sé qui se n'encarrega. A més, vull donar de baixa el meu antic contracte de mòbil i fer-ne un de nou. I al final encara arriba la declaració de la renda..."}, {"id": "t-job", "theme": "Feina i professions", "title": "Traumjob gesucht", "text": "Hoa sucht eine neue Stelle. Sie hat schon viel [[Arbeitserfahrung]] in Cafés, aber sie möchte eine [[Fixanstellung]]. Ihr letzter Vertrag war [[befristet]]. Bei der [[Berufsberatung]] hat man ihr gesagt, dass sie zur [[Messe]] gehen soll. Dort gibt es viele [[Vorträge]] zum Thema [[Selbstständigkeit]]. Vielleicht wird sie bald eine erfolgreiche [[Unternehmerin]]!", "ca": "La Hoa busca una feina nova. Ja té molta experiència laboral en cafeteries, però vol un contracte indefinit. El seu últim contracte era temporal. A orientació professional li han dit que vagi a la fira. Allà hi ha moltes xerrades sobre treballar per compte propi. Potser aviat serà una empresària d'èxit!"}, {"id": "t-wandern", "theme": "El temps", "title": "Wanderung am Wochenende", "text": "Am Samstag sind wir in den Bergen [[gewandert]]. Am Morgen war es [[neblig]] und ziemlich [[kalt]], aber dann ist die [[Sonne]] gekommen. Laut [[Wetterbericht]] sollte es am Nachmittag ein [[Gewitter]] geben. Zum Glück hatte ich meinen [[Regenschirm]] dabei. Die Landschaft war unglaublich schön!", "ca": "Dissabte vam fer una excursió per la muntanya. Al matí hi havia boira i feia força fred, però després va sortir el sol. Segons la previsió, a la tarda hi havia d'haver tempesta. Per sort portava el paraigua. El paisatge era increïblement bonic!"}, {"id": "t-reise", "theme": "Verbs amb sein (Perfekt)", "title": "Ein verrückter Urlaub", "text": "Letzten Sommer [[bin]] ich nach Griechenland geflogen. Das Flugzeug ist pünktlich [[gelandet]]. Am ersten Tag sind wir im Meer [[geschwommen]] und am zweiten Tag [[gesegelt]]. Am dritten Tag ist etwas Komisches [[passiert]]: Ein Hund ist mir den ganzen Tag [[gefolgt]]! Am Abend bin ich so müde gewesen, dass ich sofort [[eingeschlafen]] bin.", "ca": "L'estiu passat vaig volar a Grècia. L'avió va aterrar puntual. El primer dia vam nedar al mar i el segon vam navegar a vela. El tercer dia va passar una cosa estranya: un gos em va seguir tot el dia! Al vespre estava tan cansat que em vaig adormir de seguida."}, {"id": "t-hochzeit", "theme": "Família i relacions", "title": "Die Hochzeit meiner Cousine", "text": "Meine Cousine ist seit einem Jahr [[verlobt]]. Nächsten Monat ist die [[Hochzeit]]. Sie hat mich [[eingeladen]] und ich freue mich sehr! Ihr Freund ist sehr [[nett]] und sie haben eine tolle [[Beziehung]]. Ihre Eltern haben sich vor zehn Jahren [[scheiden]] lassen, aber zur Hochzeit kommen beide. Wir werden die ganze Nacht [[feiern]]!", "ca": "La meva cosina fa un any que està promesa. El mes que ve és el casament. M'ha convidat i em fa molta il·lusió! El seu xicot és molt simpàtic i tenen una relació genial. Els seus pares es van divorciar fa deu anys, però al casament hi aniran tots dos. Farem festa tota la nit!"}, {"id": "t-dieb", "theme": "Aspecte i roba", "title": "Wer ist der Dieb?", "text": "Gestern hat jemand mein Fahrrad [[gestohlen]]. Eine Nachbarin hat den Mann [[beobachtet]]. Ihre [[Beschreibung]]: Er hat einen langen [[Bart]] und trägt einen schwarzen [[Kapuzenpulli]] mit einer lustigen [[Aufschrift]]. Dazu weiße [[Turnschuhe]] und eine sehr [[weite]] Hose. Er hat [[verdächtig]] ausgesehen. Die Polizei sucht ihn jetzt.", "ca": "Ahir algú em va robar la bici. Una veïna va observar l'home. La seva descripció: té una barba llarga i porta una dessuadora negra amb caputxa amb un text divertit. A més, sabatilles blanques i uns pantalons molt amples. Feia cara de sospitós. Ara la policia el busca."}, {"id": "t-kurs", "theme": "Estudis", "title": "Mein Deutschkurs", "text": "Ich besuche dreimal pro Woche einen Deutschkurs. Der [[Unterricht]] beginnt um 18 Uhr. Die Lehrerin schreibt neue Wörter an die [[Tafel]] und wir müssen sie [[unterstreichen]]. Meine [[Aussprache]] ist noch nicht perfekt, deshalb muss ich viel [[üben]]. Ich mache noch viele [[Fehler]], aber ich mache auch [[Fortschritte]]. Am Ende will ich [[fließend]] sprechen.", "ca": "Vaig a un curs d'alemany tres cops per setmana. La classe comença a les 18 h. La professora escriu paraules noves a la pissarra i les hem de subratllar. La meva pronunciació encara no és perfecta, per això he de practicar molt. Encara faig molts errors, però també progresso. Al final vull parlar amb fluïdesa."}, {"id": "t-mitbewohner", "theme": "Caràcter", "title": "Meine Mitbewohner", "text": "Oli ist sehr [[ruhig]] und ein bisschen [[schüchtern]]. Er sagt nicht viel, aber er ist sehr [[zuverlässig]]. Anna ist das [[Gegenteil]]: Sie ist immer [[fröhlich]] und erzählt [[ständig]] lustige Geschichten. Manchmal ist sie auch ein bisschen [[faul]], aber sie ist eine [[treue]] Freundin.", "ca": "L'Oli és molt tranquil i una mica tímid. No parla gaire, però és molt de fiar. L'Anna és tot el contrari: sempre està alegre i explica constantment històries divertides. De vegades també és una mica gandula, però és una amiga fidel."}, {"id": "t-meinung", "theme": "Connectors i adverbis", "title": "Lohnt sich ein Master im Ausland?", "text": "Ein Master im Ausland ist [[zwar]] teuer, [[aber]] er hat viele Vorteile. Man lernt [[nicht]] nur eine neue Sprache, [[sondern]] auch eine neue Kultur kennen. [[Je]] länger man bleibt, [[desto]] besser versteht man die Leute. [[Obwohl]] es am Anfang anstrengend ist, lohnt es sich [[sicher]].", "ca": "Un màster a l'estranger és car, però té molts avantatges. No només aprens una llengua nova, sinó també una cultura nova. Com més temps et quedes, millor entens la gent. Encara que al principi és cansat, segur que val la pena."}, {"id": "t-tiere", "theme": "Animals", "title": "Ein Tag auf dem Bauernhof", "text": "Am Sonntag waren wir auf einem Bauernhof in den Alpen. Dort gibt es viele [[Kühe]] und [[Schafe]]. Der [[Hund]] hat die ganze Zeit [[gebellt]]. Die Kinder haben die [[Hühner]] gefüttert und ein [[Pferd]] gestreichelt. Im Wald haben wir sogar ein [[Reh]] gesehen!", "ca": "Diumenge vam anar a una granja als Alps. Allà hi ha moltes vaques i ovelles. El gos va estar bordant tota l'estona. Els nens van donar de menjar a les gallines i van acariciar un cavall. Al bosc fins i tot vam veure un cabirol!"}, {"id": "t-anruf", "theme": "Opinió i comunicació", "title": "Ärger mit dem Stromanbieter", "text": "Ich habe eine hohe [[Nachzahlung]] bekommen. Das muss ein [[Missverständnis]] sein! Ich habe [[mehrmals]] bei der Hotline angerufen, aber niemand hat [[reagiert]]. Dann habe ich eine E-Mail geschrieben: „Ich freue mich auf Ihre [[Rückmeldung]].“ Am Ende hat man mir recht gegeben. Ich habe mich natürlich [[bedankt]].", "ca": "M'ha arribat una regularització molt alta. Ha de ser un malentès! He trucat diverses vegades a la línia d'atenció, però ningú no ha respost. Després he escrit un correu: \"Espero la seva resposta.\" Al final m'han donat la raó. És clar que els he donat les gràcies."}]};
+const CARDS = DATA.cards;
+const POS = {noun:'Substantiu',verb:'Verb',adj:'Adjectiu',adv:'Adverbi',phrase:'Expressió'};
+const GEN = {der:'masculí',die:'femení',das:'neutre'};
+const I = {
+  repeat:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  layers:'<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  message:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/>',
+  file:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
+  pencil:'<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/>',
+  flame:'<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 0 2 1 3 2 3 0-3-1-5.5.5-8z"/>',
+  check:'<path d="M5 12l5 5 9-10"/>', x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  right:'<path d="m9 6 6 6-6 6"/>', left:'<path d="m15 6-6 6 6 6"/>', down:'<path d="m6 9 6 6 6-6"/>',
+  volume:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>',
+  sparkle:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/>',
+  fileup:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 14.5l3-3 3 3"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  download:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  bell:'<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>', logout:'<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/>',
+  shuffle:'<path d="M3 7h3c4 0 6 10 10 10h5M3 17h3c1.6 0 2.8-1.6 3.8-3.5M14.2 10.5C15.2 8.6 16.4 7 18 7h3"/><path d="m18 4 3 3-3 3M18 14l3 3-3 3"/>',
+  undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>'
+};
+const ic = (n,s=22,w=1.9) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const label = c => c.art ? `<span class="art ${c.art}">${c.art}</span> ${esc(c.de)}` : esc(c.de);
+const fold = s => s.toLowerCase().trim().replace(/ae/g,'ä').replace(/oe/g,'ö').replace(/ue/g,'ü').replace(/ss/g,'ß');
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+const S = {
+  screen:'welcome', base:'ca', target:'de', langStep:1, theme:'auto',
+  study:{queue:null,i:0,flipped:false,done:0,ok:0},
+  all:{decks:[],pos:[],order:[],flipped:false}, rf:{decks:[],pos:[]}, webNav:'side', opt:{rf:{dir:'mix',showWord:true,newPerDay:15},all:{dir:'mix',showWord:true,perSession:'all'}}, sheet:null, view:'mobile',
+  create:{ai:"Vull flashcards relacionades amb l'aeroport",src:'write',text:'der Vertrag\nkündigen\ngegenüber\ndurchsichtig\nder Feller',gen:-1},
+  review:null, cloze:{i:0,mode:'choice',picked:null,typed:'',n:0,right:0,q:null},
+  text:{fills:{},sel:0,checked:false,done:{},bank:[]}, toast:null
+};
+S.font='base';
+try{ const op=JSON.parse(localStorage.getItem('wk-opt')||'null'); if(op&&op.rf&&op.all) S.opt=op; }catch(e){}
+try{ const vm=localStorage.getItem('wk-view'); if(vm) S.view=vm; const nv=localStorage.getItem('wk-nav'); if(nv) S.webNav=nv; }catch(e){}
+try { const t=localStorage.getItem('wk-theme'); if (t) S.theme=t; const f=localStorage.getItem('wk-font'); if (f) S.font=f; } catch(e){}
+const FONTS={base:['Actual','Bricolage Grotesque','Atkinson Hyperlegible Next','La proposta original: grotesca expressiva + lletra dissenyada per a la llegibilitat.'],
+ fj1:['Fontjoy 1','Chivo','Cabin','Fontjoy: títol Chivo bloquejat, el generador proposa Cabin per al text.'],
+ fj2:['Fontjoy 2','Work Sans','PT Sans Caption','Fontjoy: títol Work Sans bloquejat, el generador proposa PT Sans Caption.']};
+function applyFont(){ const f=FONTS[S.font]||FONTS.base; const r=document.documentElement.style; r.setProperty('--display',`'${f[1]}',system-ui,sans-serif`); r.setProperty('--body',`'${f[2]}',system-ui,sans-serif`); try{localStorage.setItem('wk-font',S.font)}catch(e){} }
+const fontBtns = () => Object.entries(FONTS).map(([k,f])=>`<button aria-pressed="${S.font===k}" data-act="font" data-v="${k}">${f[0]}</button>`).join('');
+
+function applyTheme(){ const r=document.documentElement; if (S.theme==='auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme',S.theme); try{localStorage.setItem('wk-theme',S.theme)}catch(e){} }
+
+const app = document.getElementById('app');
+const statusBar = () => `<div class="status"><span>9:41</span><span class="sys"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="26" height="12" viewBox="0 0 26 12" aria-hidden="true"><rect x=".5" y=".5" width="22" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/></svg></span></div>`;
+const topBar = (title, streak=true) => `<div class="top"><h2>${title}</h2>${streak?`<span class="streak">${ic('flame',16,2.2)}12</span>`:''}<button class="avatar" data-go="profile" aria-label="Obre el perfil"><span>JB</span></button></div>`;
+const TABS = [['today','Repàs','repeat'],['all','Totes','layers'],['create','Crear','plus'],['cloze','Frases','message'],['texts','Textos','file']];
+const tabs = active => `<nav class="tabs" aria-label="Seccions">${TABS.map(([id,l,i])=>`<button class="tab ${id==='create'?'create':''}" data-go="${id}" ${active===id?'aria-current="page"':''}><span class="pill">${ic(i,22)}</span>${l}</button>`).join('')}</nav>`;
+
+/* ---------- screens ---------- */
+const V = {};
+V.welcome = () => `<div class="app">${statusBar()}
+<div style="flex:1;display:flex;flex-direction:column;padding:16px 24px calc(24px + env(safe-area-inset-bottom,0px));min-height:0">
+ <div class="row" style="justify-content:center;gap:10px">${logo(34)}<span style="font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.02em">Wortkarten</span></div>
+ <div style="position:relative;height:282px;margin-top:14px;flex:none">
+  <div style="position:absolute;left:50%;top:52%;width:300px;height:220px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,var(--accent-soft),transparent)"></div>
+  ${mini('👁️','die','Wimper','left:10px;top:6px;transform:rotate(-9deg)')}
+  ${mini('🧎','das','Knie','right:10px;top:12px;transform:rotate(9deg)')}
+  <div style="position:absolute;left:50%;top:86px;width:220px;height:172px;margin-left:-110px;background:var(--surface);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+   <span style="position:absolute;top:14px;left:14px;font-size:12px;font-weight:600;color:var(--fg2);background:var(--subtle);border-radius:999px;padding:3px 9px">B1 · Cos</span>
+   <div style="font-size:48px;margin-top:10px">🧔</div>
+   <div style="font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.02em"><span class="art der">der</span> Bart</div>
+   <div class="muted" style="font-size:15px">la barba · pl. die Bärte</div>
+  </div>
+  <div style="position:absolute;left:50%;top:240px;transform:translateX(-4px);display:flex;gap:6px;align-items:center;background:var(--ink);color:var(--on-ink);border-radius:999px;padding:8px 14px 8px 11px;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:var(--shadow)"><span style="color:var(--accent)">${ic('sparkle',16,2)}</span>Creada amb IA</div>
+ </div>
+ <div style="text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:14px">
+  <h1 style="margin:0;font-family:var(--display);font-weight:700;font-size:31px;line-height:1.12;letter-spacing:-.025em;text-wrap:balance">Fes una foto de la llibreta. Estudia-la <span class="mark">demà</span>.</h1>
+  <p class="muted" style="margin:0;line-height:1.5;max-width:320px;text-wrap:pretty">La IA crea les targetes amb traducció, article i frases d'exemple. Tu només les revises.</p>
+ </div>
+ <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px;padding-top:16px">
+  <button class="btn primary" data-go="lang"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.48.83-.72 0-1.82-.81-3-.79-1.54.02-2.96.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.23-.02 2.01-1.12 2.77-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.42-3.65zM14.1 5.86c.63-.77 1.06-1.83.94-2.9-.91.04-2.01.61-2.66 1.37-.58.67-1.1 1.76-.96 2.8 1.01.08 2.05-.52 2.68-1.27z"/></svg>Continua amb Apple</button>
+  <button class="btn secondary" data-go="lang"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continua amb Google</button>
+  <button class="btn ghost" data-go="lang">Entra amb el teu email</button>
+  <p class="muted" style="margin:0;font-size:12.5px;text-align:center;line-height:1.5">En continuar acceptes les condicions i la política de privacitat.</p>
+ </div>
+</div></div>`;
+function logo(s){return `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 40 40"><rect width="40" height="40" rx="11" fill="var(--ink)"/><g transform="rotate(-7 20 20)"><rect x="8" y="11" width="24" height="18" rx="3.5" fill="var(--bg)"/><circle cx="16" cy="17.5" r="2.3" fill="#FFC53D"/><circle cx="24" cy="17.5" r="2.3" fill="#FFC53D"/><path d="M14.5 23.5h11" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/></g></svg>`}
+function mini(e,a,w,pos){return `<div style="position:absolute;${pos};width:164px;height:118px;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.07);display:flex;flex-direction:column;align-items:center;padding-top:16px;box-sizing:border-box;gap:4px"><div style="font-size:26px">${e}</div><div style="font-family:var(--display);font-weight:700;font-size:18px"><span class="art ${a}">${a}</span> ${w}</div></div>`}
+
+const LANGS=[['ca','Català','català'],['es','Castellà','español'],['en','Anglès','English'],['de','Alemany','Deutsch'],['fr','Francès','français'],['it','Italià','italiano']];
+V.lang = () => { const step=S.langStep; const key=step===1?'base':'target'; const list=LANGS.filter(l=>step===1||l[0]!==S.base);
+return `<div class="app">${statusBar()}
+<div class="row" style="padding:4px 8px">${step===2?`<button class="iconbtn" data-act="langBack" aria-label="Enrere">${ic('left',24)}</button>`:`<button class="iconbtn" data-go="welcome" aria-label="Enrere">${ic('left',24)}</button>`}</div>
+<div class="scroll" style="gap:18px">
+ <div class="row" style="gap:6px">${[1,2,3].map(n=>`<i style="display:block;height:8px;border-radius:4px;width:${n===step?24:8}px;background:${n<=step?'var(--ink)':'var(--border-strong)'}"></i>`).join('')}</div>
+ <h1 style="margin:0;font-family:var(--display);font-size:30px;letter-spacing:-.02em;line-height:1.15">${step===1?'Quina llengua parles?':'Quina llengua vols aprendre?'}</h1>
+ <p class="muted" style="margin:0;line-height:1.5">${step===1?"Les traduccions i les frases d'exemple sortiran en aquesta llengua.":'Les targetes, les frases i els textos seran en aquesta llengua.'}</p>
+ <div role="radiogroup" style="display:flex;flex-direction:column;gap:8px">${list.map(([c,n,nat])=>`<button class="lang" role="radio" aria-checked="${S[key]===c}" data-act="pickLang" data-v="${c}"><span class="code">${c.toUpperCase()}</span><span style="display:flex;flex-direction:column"><b>${n}</b><span class="muted small">${nat}</span></span><span class="radio">${S[key]===c?ic('check',15,3):''}</span></button>`).join('')}</div>
+</div>
+<div style="padding:12px 20px calc(24px + env(safe-area-inset-bottom,0px))"><button class="btn primary" data-act="langNext">Continua</button><p class="muted small" style="text-align:center;margin:10px 0 0">Pas ${step} de 3</p></div></div>`; };
+
+const DECKS=[['Tràmits i diners','🏛️',46,31,12],['El cos','🫁',41,30,9],['Feina i professions','💼',34,20,14],['Caràcter','🛡️',32,25,6],['Estudis','🎓',23,18,0]];
+function ring(a,b,done){ const R=52,C=2*Math.PI*R,tot=a+b,g=4; const la=C*a/tot-g, lb=C*b/tot-g;
+ return `<svg width="128" height="128" viewBox="0 0 128 128"><circle cx="64" cy="64" r="${R}" fill="none" stroke="var(--ring-track)" stroke-width="12"/><circle cx="64" cy="64" r="${R}" fill="none" stroke="var(--on-ink)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${la} ${C-la}" transform="rotate(-90 64 64)"/><circle cx="64" cy="64" r="${R}" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${lb} ${C-lb}" stroke-dashoffset="${-(la+g)}" transform="rotate(-90 64 64)"/></svg>`; }
+function deckRow([t,e,n,l,d]){return `<button class="deck" data-act="openDeck" data-v="${t}"><span class="thumb">${e}</span><span style="flex:1;min-width:0"><b style="display:block">${t}</b><span class="muted small">${n} targetes · ${l} apreses</span><span class="bar"><i style="width:${Math.round(l/n*100)}%"></i></span></span>${d?`<span class="due">${d}</span>`:''}<span style="color:var(--fg3)">${ic('right',20)}</span></button>`}
+
+/* Repàs: the review session is the tab itself, as in the original app */
+const POSL=[['noun','Substantius'],['verb','Verbs'],['adj','Adjectius'],['adv','Adverbis i connectors'],['phrase','Expressions']];
+const posOk=(sel,c)=>!sel.length||sel.includes(c.pos);
+const deckOk=(d,c)=>!d.length||d.includes(c.theme);
+function rfPool(){ const r=S.rf; return CARDS.filter(c=>deckOk(r.decks,c)&&posOk(r.pos,c)); }
+const pickDir=o=>o.dir==='mix'?(Math.random()<.5?'de':'ca'):o.dir;
+const rfKey=()=>S.rf.decks.join(',')+'|'+S.rf.pos.join(',')+'|'+S.opt.rf.dir+'|'+S.opt.rf.newPerDay;
+function buildRepas(){ const o=S.opt.rf; const pool=shuffle(rfPool()); let nNew=0; S.study={queue:pool.map((c,i)=>{ let isNew=i%3===2&&nNew<o.newPerDay; if(isNew) nNew++; return {c,dir:pickDir(o),isNew}; }).filter((q,i)=>!(i%3===2)||q.isNew),i:0,flipped:false,revealed:false,done:0,ok:0,key:rfKey()}; S.anim=true; }
+function startStudy(){ buildRepas(); go('today'); }
+function themeBtn(tgt){ const a=S[tgt]; const badge=a.pos.length?(a.pos.length===1?POSL.find(p=>p[0]===a.pos[0])[1]:a.pos.length+' tipus'):'';
+ return `<button class="themebtn" data-act="sheet" data-v="${tgt}" aria-haspopup="dialog">${badge?'':'<span class="tb-k">Tema</span>'}<span class="tb-v">${a.decks.length?(a.decks.length===1?esc(a.decks[0]):a.decks.length+' temes'):'Totes'}</span>${badge?`<span class="tb-pos">${badge}</span>`:''}${ic('down',18)}</button>`; }
+function cardFront(c,dir='de',showWord=true){ const big=showWord?64:110;
+ const word = !showWord ? '' : dir==='ca' ? `<div class="word">${esc(c.ca)}</div>` : `<div class="word">${label(c)}</div>`;
+ const hint = !showWord ? (dir==='ca'?`Com es diu en alemany${c.art?", amb l'article":''}?`:'Quina paraula alemanya és?') : dir==='ca' ? `Digues-ho en alemany${c.art?", amb l'article":''}` : (POS[c.pos]||'');
+ return `<div style="font-size:${big}px;line-height:1">${c.img}</div>${word}<span class="hint" style="position:absolute;bottom:18px">${hint}</span>`; }
+V.today = () => { const st=S.study; const key=rfKey(); if(!st.queue||st.key!==key) buildRepas(); const s=S.study;
+ const left=s.queue.slice(s.i); const due=left.filter(q=>!q.isNew).length, nw=left.filter(q=>q.isNew).length; const n=s.queue.length; const q=s.queue[s.i];
+ const head=`<div class="rhead"><div class="row" style="gap:8px">${themeBtn('rf')}<span class="counts"><b style="color:var(--ok)">${due}</b> repàs <b style="color:var(--easy)">${nw}</b> noves</span><button class="iconbtn optbtn" data-act="sheet" data-v="opt-rf" aria-label="Opcions">${ic('sliders',20)}</button><button class="avatar rh-av" data-go="profile" aria-label="Obre el perfil"><span>JB</span></button></div><div class="ptrack"><i style="width:${n?s.i/n*100:0}%"></i></div></div>`;
+ if(!q) { const pct=s.done?Math.round(s.ok/s.done*100):0; return `<div class="app">${statusBar()}${head}
+<div class="scroll" style="padding-top:28px;gap:20px">
+<div style="width:72px;height:72px;border-radius:22px;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center">${ic('check',36,2.4)}</div>
+<h1 style="margin:0;font-family:var(--display);font-size:32px;letter-spacing:-.02em">${n?'Repàs fet per avui':'Res per repassar aquí'}</h1>
+${n?`<div class="stats"><div class="stat acc"><b>${s.done}</b><span class="muted small">targetes</span></div><div class="stat"><b>${pct}%</b><span class="muted small">encerts</span></div><div class="stat"><b>13</b><span class="muted small">dies de ratxa</span></div></div>
+<p class="muted" style="margin:0">Les que t'han costat tornaran a sortir aviat.</p>`:`<p class="muted" style="margin:0">Canvia el tema o el tipus de paraula a dalt.</p>`}
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:10px"><button class="btn primary" data-go="all">Practica lliurement</button><button class="btn secondary" data-go="cloze">Practica amb frases</button></div>
+</div>${tabs('today')}</div>`; }
+ const c=q.c;
+return `<div class="app">${statusBar()}${head}
+<div style="flex:1;display:flex;flex-direction:column;padding:10px 20px 0;min-height:0">
+ <div class="flash ${s.flipped?'flipped':''} ${S.anim?'enter':''}" id="flash"><div class="face front" data-act="flip" role="button" aria-label="Gira la targeta">${q.isNew?'<span class="newtag">Nova</span>':''}${cardFront(c,q.dir,S.opt.rf.showWord)}</div><div class="face back" data-act="flip" role="button" aria-label="Torna a girar la targeta">${cardBack(c)}</div></div>
+</div>
+<div id="studyFoot">${s.revealed?rateHTML():showHTML()}</div>
+<div class="rmeta"><div class="row" style="justify-content:space-between"><span>${esc(c.theme)}</span><span style="font-variant-numeric:tabular-nums">${s.i+1} de ${n}</span></div><div class="row" style="justify-content:space-between;gap:10px"><span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${Math.max(0,412-s.done)} consolidades, 96 aprenent, 78 sense veure</span><span class="legend" style="flex:none"><b class="der">der</b><b class="die">die</b><b class="das">das</b></span></div></div>
+${tabs('today')}</div>`; };
+const showHTML=()=>`<div class="foot0"><button class="btn primary" data-act="flip">Mostra la resposta <kbd class="kbd">Espai</kbd></button></div>`;
+const rateHTML=()=>`<div class="rate in">${[['again','De nou','<1 min'],['hard','Difícil','8 min'],['good','Bé','3 d'],['easy','Fàcil','9 d']].map(([k,l,t],i)=>`<button class="${k}" data-act="rate" data-v="${k}">${l}<small>${t}</small><kbd class="kbd">${i+1}</kbd></button>`).join('')}</div>`;
+function flipStudy(){ const st=S.study; st.flipped=!st.flipped; const f=document.getElementById('flash'); if(f){ f.classList.remove('enter'); f.classList.toggle('flipped',st.flipped); } if(st.flipped&&!st.revealed){ st.revealed=true; const ft=document.getElementById('studyFoot'); if(ft) ft.innerHTML=rateHTML(); } }
+function rateStudy(v){ const st=S.study; st.done++; if(v!=='again') st.ok++; st.i++; st.flipped=false; st.revealed=false; S.anim=true; render(); }
+function cardBack(c){ const tw=c.ex.map(([de,ca,t])=>{const i=de.indexOf(t);const h=i<0?esc(de):esc(de.slice(0,i))+'<b>'+esc(t)+'</b>'+esc(de.slice(i+t.length));return `<div class="ex"><span>${h}</span><span class="muted small">${esc(ca)}</span></div>`}).join('');
+ const tag=c.art?`${POS[c.pos]} · ${GEN[c.art]}`:(POS[c.pos]||'');
+ return `<div class="back-img" style="--g:${c.art?`var(--${c.art})`:'var(--border-strong)'}"><span>${c.img}</span></div><div class="back-in">
+ <div class="row" style="gap:12px;align-items:center"><span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span class="tag" style="${c.art?`color:var(--${c.art})`:'background:var(--subtle);color:var(--fg2)'}">${tag}</span><span class="word" style="text-align:left;font-size:32px">${label(c)}</span></span><button class="iconbtn round" data-act="noop" aria-label="Escolta la pronunciació">${ic('volume',20)}</button></div>
+ ${c.pl||c.extra?`<div class="muted small">${esc(c.pl?'pl. '+c.pl:c.extra)}</div>`:''}
+ <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font-family:var(--display);font-weight:600;font-size:24px">${esc(c.ca)}</span><span class="small muted">EN ${esc(c.en)}</span></div>
+ ${c.note?`<div class="note">${esc(c.note)}</div>`:''}
+ <div style="display:flex;flex-direction:column;gap:9px">${tw}</div></div>`; }
+
+
+/* Totes: free practice, swipe through the pile */
+function allPool(){ const a=S.all; return CARDS.filter(c=>deckOk(a.decks,c)&&posOk(a.pos,c)); }
+function resetAll(){ const a=S.all, o=S.opt.all; let pool=shuffle(allPool()); if(o.perSession!=='all') pool=pool.slice(0,o.perSession); a.order=pool.map(c=>({c,dir:pickDir(o)})); a.flipped=false; a.known=0; a.total=a.order.length; }
+V.all = () => { const a=S.all; if(a.total===undefined) resetAll(); const o=S.opt.all; const q0=a.order[0], q1=a.order[1]; const c=q0&&q0.c, nx=q1&&q1.c;
+ const left=a.order.length;
+return `<div class="app">${statusBar()}${topBar('Totes',false)}
+<div class="row" style="padding:0 20px 6px;gap:8px">
+ ${themeBtn('all')}
+ <button class="iconbtn round" data-act="allShuffle" aria-label="Barreja i torna a començar">${ic('shuffle',20)}</button>
+ <button class="iconbtn optbtn" data-act="sheet" data-v="opt-all" aria-label="Opcions">${ic('sliders',20)}</button>
+</div>
+<div class="row muted small" style="padding:4px 22px 8px;justify-content:space-between;font-variant-numeric:tabular-nums"><span>${left} per passar</span><span style="color:var(--ok);font-weight:700">${a.known} sabudes</span></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:0 20px;min-height:0">
+ ${c?`<div class="pile">${nx?`<div class="flash under"><div class="face front">${cardFront(nx,q1.dir,o.showWord)}</div></div>`:''}
+  <div class="flash swipe ${a.flipped?'flipped':''} ${S.anim?'enter':''}" id="swipe"><div class="face front" role="button" aria-label="Gira la targeta">${cardFront(c,q0.dir,o.showWord)}</div><div class="face back">${cardBack(c)}</div>
+  <span class="stamp yes">LA SÉ</span><span class="stamp no">REPASSA</span></div></div>`
+ :`<div class="card" style="flex:1;align-items:center;justify-content:center;text-align:center;gap:14px"><div style="width:64px;height:64px;border-radius:20px;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center">${ic('check',32,2.4)}</div><b style="font-family:var(--display);font-size:24px">Les has passat totes</b><span class="muted">${a.total} paraules. Les que no sabies han tornat a sortir fins que les has encertat.</span><button class="btn primary" data-act="allShuffle" style="width:auto">Torna a començar</button></div>`}
+</div>
+<div class="swipe-bar">
+ <button class="sbtn no" data-act="allNo" aria-label="No la sé, torna-la a posar" ${c?'':'disabled'}>${ic('x',24,2.4)}</button>
+ <span class="hint">Llisca: → la sé · ← repassa</span>
+ <button class="sbtn yes" data-act="allYes" aria-label="La sé" ${c?'':'disabled'}>${ic('check',24,2.4)}</button>
+</div>
+${tabs('all')}
+</div>`; };
+function allAnswer(known){ const a=S.all; const c=a.order.shift(); if(known) a.known++; else a.order.splice(Math.min(3,a.order.length),0,c); a.flipped=false; S.anim=true; render(); }
+function flyOut(dir){ const el=document.getElementById('swipe'); if(!el){ allAnswer(dir>0); return; } el.style.setProperty(dir>0?'--yes':'--no',1); el.style.transition='transform .28s ease-in'; el.style.transform=`translateX(${dir*520}px) rotate(${dir*18}deg)`; setTimeout(()=>allAnswer(dir>0),230); }
+function optHTML(tgt){ const o=S.opt[tgt]; const isRf=tgt==='rf';
+ const seg=(key,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button aria-pressed="${String(o[key])===String(v)}" data-act="opt" data-k="${key}" data-v="${v}">${l}</button>`).join('')}</div>`;
+ return `<div class="sheet-wrap" data-act="closeSheet"><div class="sheet" role="dialog" aria-label="Opcions" data-stop>
+ <span class="grab"></span><div class="row"><h3 class="h3" style="font-size:22px;flex:1">Opcions${isRf?'':' de pràctica lliure'}</h3><button class="iconbtn" data-act="closeSheet" aria-label="Tanca">${ic('x',22)}</button></div>
+ <div class="optgrp"><div class="eyebrow">Direcció</div><p class="muted small" style="margin:-4px 0 0">DE → CA: veus l'alemany i dius el català. CA → DE: al revés.</p>${seg('dir',[['de','DE → CA'],['ca','CA → DE'],['mix','Barrejat']])}</div>
+ <div class="optgrp"><div class="eyebrow">Davant de la targeta</div><button class="switchrow" role="switch" aria-checked="${o.showWord}" data-act="opt" data-k="showWord" data-v="${!o.showWord}"><span class="switch"><i></i></span>${o.showWord?'Imatge i paraula':'Només la imatge'}</button></div>
+ <div class="optgrp"><div class="eyebrow">${isRf?'Paraules noves al dia':'Paraules per sessió'}</div>${isRf?seg('newPerDay',[[5,'5'],[10,'10'],[15,'15'],[20,'20'],[30,'30']]):seg('perSession',[[10,'10'],[20,'20'],[50,'50'],['all','Totes']])}</div>
+ <button class="btn primary" data-act="closeSheet">Fet</button>
+ ${isRf?'':''}<button class="muted small" style="text-decoration:underline;min-height:40px" data-go="profile">Més opcions al perfil</button>
+ </div></div>`; }
+function sheetHTML(){ if(String(S.sheet).startsWith('opt-')) return optHTML(S.sheet.slice(4)); const tgt=S.sheet; const a=S[tgt]; const themes=[...new Set(CARDS.map(c=>c.theme))].sort((x,y)=>x.localeCompare(y,'ca'));
+ const base=CARDS.filter(c=>deckOk(a.decks,c));
+ return `<div class="sheet-wrap" data-act="closeSheet"><div class="sheet" role="dialog" aria-label="Què vols practicar" data-stop>
+ <span class="grab"></span><div class="row"><h3 class="h3" style="font-size:22px;flex:1">${tgt==='rf'?'Què vols repassar?':'Què vols practicar?'}</h3><button class="iconbtn" data-act="closeSheet" aria-label="Tanca">${ic('x',22)}</button></div>
+ <div><div class="eyebrow" style="margin-bottom:8px">Tipus de paraula</div><div class="chips">${POSL.map(([k,l])=>{const n=base.filter(c=>c.pos===k).length;return `<button class="chip pos" aria-pressed="${a.pos.includes(k)}" data-act="setPos" data-v="${k}" ${n?'':'disabled'}>${l} <span class="n">${n}</span></button>`}).join('')}</div><p class="muted small" style="margin:8px 0 0">${a.pos.length?'Toca de nou per treure el filtre.':'Cap seleccionat: totes les paraules.'}</p></div>
+ <div><div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="eyebrow">Temes</span><span class="muted small">${a.decks.length?a.decks.length+' triats':'Tots'}</span></div><div class="tlist">${['Totes',...themes].map(t=>{const p=(t==='Totes'?CARDS:CARDS.filter(c=>c.theme===t)).filter(c=>posOk(a.pos,c));const on=t==='Totes'?!a.decks.length:a.decks.includes(t);return `<button class="trow" role="checkbox" aria-checked="${on}" data-act="setDeck" data-v="${esc(t)}"><span class="tick">${on?ic('check',14,3):''}</span><span class="nm">${t==='Totes'?'Tots els temes':esc(t)}</span>${tgt==='rf'&&p.length?`<span class="due">${p.length}</span>`:''}<span class="n">${p.length}</span></button>`}).join('')}</div></div>
+ <button class="btn primary" data-act="closeSheet">${tgt==='rf'?'Repassa '+rfPool().length+' targetes':'Practica '+allPool().length+' paraules'}</button>
+ </div></div>`; }
+function bindSwipe(){ const el=document.getElementById('swipe'); if(!el) return; let x0=null,dx=0,id=null;
+ el.addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; el.classList.remove('enter'); x0=e.clientX; dx=0; id=e.pointerId; el.setPointerCapture(id); el.classList.add('drag'); });
+ el.addEventListener('pointermove',e=>{ if(x0===null) return; dx=e.clientX-x0; el.style.transform=`translateX(${dx}px) rotate(${dx/18}deg)`; el.style.setProperty('--yes',Math.max(0,Math.min(1,dx/90))); el.style.setProperty('--no',Math.max(0,Math.min(1,-dx/90))); });
+ const end=()=>{ if(x0===null) return; el.classList.remove('drag'); x0=null;
+   if(Math.abs(dx)>90){ el.style.transition='transform .25s ease-out'; el.style.transform=`translateX(${dx>0?500:-500}px) rotate(${dx>0?20:-20}deg)`; setTimeout(()=>allAnswer(dx>0),200); }
+   else if(Math.abs(dx)<6){ el.style.transform=''; S.all.flipped=!S.all.flipped; el.classList.toggle('flipped',S.all.flipped); }
+   else { el.style.transform=''; el.style.setProperty('--yes',0); el.style.setProperty('--no',0); } };
+ el.addEventListener('pointerup',end); el.addEventListener('pointercancel',end);
+ el.addEventListener('keydown',e=>{}); }
+
+/* Crear */
+V.create = () => { const cr=S.create; const words=cr.text.split('\n').map(s=>s.trim()).filter(Boolean);
+ const body = cr.src==='ai' ? `<label for="aiPrompt" class="muted small">Explica quines targetes vols. La IA ho afina amb tu abans de crear-les.</label><textarea id="aiPrompt" spellcheck="false" style="min-height:120px">${esc(cr.ai)}</textarea><div class="chips">${["Vull anar al metge","Verbs de cuina","Entrevista de feina","Parlar del temps"].map(x=>`<button class="chip" data-act="aiEx" data-v="${x}">${x}</button>`).join('')}</div>`
+ : cr.src==='write' ? `<label for="words" class="muted small">Una paraula o expressió per línia. Amb errors també.</label><textarea id="words" spellcheck="false" data-input="words">${esc(cr.text)}</textarea><div class="row muted small" style="justify-content:space-between"><span>La IA corregeix l'ortografia</span><span id="wcount" style="font-variant-numeric:tabular-nums">${words.length} / 50</span></div>`
+ : `<div class="drop">${ic(cr.src==='photo'?'camera':'fileup',34,1.6)}<strong>${cr.src==='photo'?'Fes una foto de la llibreta':'Puja un PDF'}</strong><span class="small">${cr.src==='photo'?'O tria fins a 10 fotos de la galeria':'Fins a 20 pàgines'}</span><button class="btn secondary" style="width:auto;min-height:44px;margin-top:6px" data-act="fakeUpload">${cr.src==='photo'?'Obre la càmera':'Tria un fitxer'}</button></div>`;
+return `<div class="app">${statusBar()}${topBar('Crear',false)}
+<div class="scroll" style="gap:14px">
+ <p class="muted" style="margin:0;line-height:1.5">${cr.src==='ai'?'Demana un tema i la IA tria les paraules per tu.':'Escriu paraules o puja una foto de la llibreta. La IA fa la resta.'}</p>
+ <div class="seg" role="group" aria-label="Font">${[['photo','Foto','camera'],['pdf','PDF','fileup'],['write','Escriure','pencil'],['ai','Demana','sparkle']].map(([k,l,i])=>`<button aria-pressed="${cr.src===k}" data-act="src" data-v="${k}">${ic(i,18)}${l}</button>`).join('')}</div>
+ <div class="row small muted" style="gap:8px">${ic('globe',18)}<span style="flex:1">Alemany → Català</span><button class="small" style="text-decoration:underline;color:var(--fg);min-height:44px" data-go="profile">Canvia</button></div>
+ ${body}
+ ${cr.src==='ai'?'':`<button class="deck" style="padding:12px 12px 12px 16px;border-radius:14px"><span class="muted">Desa a</span><b style="flex:1">Llibreta B1</b>${ic('right',20)}</button>`}
+ <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+  ${cr.src==='ai'?`<button class="btn accent" data-act="aiRefine">${ic('sparkle',20)}Continua</button><p class="hint" style="margin:0">Primer et proposarà subtemes i on desar-les.</p>`:`<button class="btn accent" data-act="generate" ${cr.src==='write'&&!words.length?'disabled':''}>${ic('sparkle',20)}Crea ${cr.src==='write'?words.length+' ':''}targetes</button>
+  <p class="hint" style="margin:0">Traducció, gènere, plural, 3 frases i imatge. Les revises abans de desar.</p>`}
+ </div>
+</div>${tabs('create')}
+${cr.gen>=0?genHTML():''}
+</div>`; };
+const genHTML=()=>{ const cr=S.create; return `<div class="gen" role="status"><div style="color:var(--accent-text)">${ic('sparkle',40,1.6)}</div><h2 style="margin:0;font-family:var(--display);font-size:24px">${cr.gen>=10?'Afinant la petició':'Creant les targetes'}</h2><ol>${(cr.src==='ai'?(cr.gen>=10?['Entenent la petició','Pensant subtemes','Preparant la proposta']:['Triant '+S.refine.n+' paraules útils','Comprovant el gènere i el plural','Escrivint 3 frases per paraula','Triant imatges']):['Llegint les paraules','Corregint i detectant el gènere','Escrivint 3 frases per paraula','Triant imatges']).map((t,i)=>`<li class="${i<cr.gen%10?'done':i===cr.gen%10?'on':''}"><span class="dot">${i<cr.gen%10?ic('check',13,3):''}</span>${t}</li>`).join('')}</ol></div>`; };
+function aiRefine(){ const cr=S.create; cr.gen=10; render(); const tick=()=>{ cr.gen++; if(cr.gen>=13){ setTimeout(()=>{ cr.gen=-1; S.refine=S.refine||{}; Object.assign(S.refine,{subs:['Facturació','Control de seguretat','Embarcament','Retards i cancel·lacions'],n:20,level:'B1',kind:'mix',dest:'new',name:'Aeroport',existing:'Natura i vacances'}); go('refine'); },300); } else setTimeout(tick,480); render(); }; setTimeout(tick,480); }
+const SUBS=['Facturació','Control de seguretat','Embarcament',"A l'avió",'Retards i cancel·lacions','Equipatge perdut','Duana','Arribada i transport'];
+V.refine = () => { const r=S.refine;
+return `<div class="app">${statusBar()}
+<div class="row" style="padding:4px 20px 4px 8px;gap:4px"><button class="iconbtn" data-go="create" aria-label="Enrere">${ic('left',24)}</button><div><div style="font-family:var(--display);font-weight:600;font-size:22px">Afinem la petició</div><div class="muted small">Toca el que vulguis canviar.</div></div></div>
+<div class="scroll refine-grid" style="gap:16px;padding-top:8px">
+ <section class="card" style="padding:14px 16px;gap:6px;background:var(--accent-soft);border-color:var(--accent-border)"><span class="eyebrow" style="color:var(--accent-text)">${ic('sparkle',14,2)} Això és el que he entès</span><span style="line-height:1.45">Vocabulari per <b>viatjar en avió</b>, des de la facturació fins a l'arribada, nivell <b>${r.level}</b>, amb paraules i expressions que faràs servir a l'aeroport.</span></section>
+ <div class="optgrp"><div class="row" style="justify-content:space-between"><span class="eyebrow">Subtemes</span><span class="muted small">${r.subs.length} triats</span></div><div class="chips">${SUBS.map(x=>`<button class="chip" aria-pressed="${r.subs.includes(x)}" data-act="refSub" data-v="${x}">${x}</button>`).join('')}</div></div>
+ <div class="row" style="gap:12px;align-items:flex-start"><div class="optgrp" style="flex:1"><span class="eyebrow">Quantes</span><div class="seg">${[10,20,30].map(n=>`<button aria-pressed="${r.n===n}" data-act="refSet" data-k="n" data-v="${n}">${n}</button>`).join('')}</div></div><div class="optgrp" style="flex:1"><span class="eyebrow">Nivell</span><div class="seg">${['A2','B1','B2'].map(n=>`<button aria-pressed="${r.level===n}" data-act="refSet" data-k="level" data-v="${n}">${n}</button>`).join('')}</div></div></div>
+ <div class="optgrp"><span class="eyebrow">On les vols desar?</span>
+  <div class="seg">${[['new','Nou mazo'],['old','Mazo existent']].map(([k,l])=>`<button aria-pressed="${r.dest===k}" data-act="refSet" data-k="dest" data-v="${k}">${l}</button>`).join('')}</div>
+  ${r.dest==='new'?`<input class="input" id="deckName" value="${esc(r.name)}" aria-label="Nom del mazo nou">`:`<div class="chips">${['Natura i vacances','Tràmits i diners','Paraules útils'].map(x=>`<button class="chip" aria-pressed="${r.existing===x}" data-act="refSet" data-k="existing" data-v="${x}">${x}</button>`).join('')}</div>`}
+ </div>
+</div>
+<div class="foot"><button class="btn accent" data-act="generate" ${r.subs.length?'':'disabled'}>${ic('sparkle',20)}Crea ${r.n} targetes</button></div>${S.create.gen>=0?genHTML():''}</div>`; };
+function generate(){ const cr=S.create; cr.gen=0; render(); const tick=()=>{ cr.gen++; if(cr.gen>=4){ setTimeout(()=>{ cr.gen=-1; buildReview(); go('review'); },350); } else setTimeout(tick,520); render(); }; setTimeout(tick,520); }
+function buildReview(){ if(S.create.src==='ai'){ S.review=[
+ {id:'a1',on:true,img:'✈️',art:'der',de:'Flughafen',ca:"l'aeroport",meta:'pl. die Flughäfen · 3 frases'},
+ {id:'a2',on:true,img:'🧳',art:'',de:'einchecken',ca:'facturar',meta:'hat eingecheckt · 3 frases',note:'Al taulell: "Ich möchte meinen Koffer einchecken."'},
+ {id:'a3',on:true,img:'🎫',art:'die',de:'Bordkarte',ca:"la targeta d'embarcament",meta:'pl. die Bordkarten · 3 frases'},
+ {id:'a5',on:true,img:'⏰',art:'die',de:'Verspätung',ca:'el retard',meta:'pl. die Verspätungen · 3 frases'},
+ {id:'a6',on:false,img:'🚪',art:'das',de:'Gate',ca:'la porta d\'embarcament',meta:'pl. die Gates · 3 frases',note:'Ja la tens a Paraules útils. No es duplicarà.'}]; S.review.more=S.refine.n-5; return; }
+ S.review=[
+ {id:'r1',on:true,img:'📄',art:'der',de:'Vertrag',ca:'el contracte',meta:'pl. die Verträge · 3 frases'},
+ {id:'r2',on:true,img:'✂️',art:'',de:'kündigen',ca:'donar de baixa; deixar la feina',meta:'hat gekündigt · 3 frases',note:'Ull: no vol dir "prohibir" (això és verbieten).'},
+ {id:'r3',on:true,img:'↔️',art:'',de:'gegenüber',ca:'davant per davant',meta:'preposició · 3 frases'},
+ {id:'r4',on:false,img:'❔',art:'',de:'durch…sichtig?',ca:'No queda clar quina és',meta:'Tria una opció',choices:['durchsichtig','durchschnittlich'],warn:true},
+ {id:'r5',on:true,img:'❌',art:'der',de:'Fehler',ca:"l'error",meta:'pl. die Fehler · 3 frases',note:'Corregit: havies escrit "Feller".'}]; }
+V.review = () => { const R=S.review; const n=R.filter(r=>r.on).length+(R.more||0); const tot=R.length+(R.more||0);
+return `<div class="app">${statusBar()}
+<div class="row" style="padding:4px 20px 4px 8px;gap:4px"><button class="iconbtn" data-go="${S.create.src==='ai'?'refine':'create'}" aria-label="Enrere">${ic('left',24)}</button><div><div style="font-family:var(--display);font-weight:600;font-size:22px">Revisa ${tot} targetes</div><div class="muted small">Creades en 3 s. Treu les que no vulguis.</div></div></div>
+<div class="scroll review-list" style="gap:10px;padding-top:10px">${R.map(r=>`<div class="draft ${r.warn&&!r.picked?'warn':''} ${r.on?'':'off'}">
+ <div class="row"><button class="check" role="checkbox" aria-checked="${r.on}" aria-label="Inclou ${esc(r.de)}" data-act="toggleDraft" data-v="${r.id}" ${r.warn&&!r.picked?'disabled':''}>${r.on?ic('check',16,3):''}</button><span style="font-size:24px">${r.img}</span>
+ <span style="flex:1;min-width:0;display:flex;flex-direction:column"><b>${r.art?`<span class="${r.art}">${r.art}</span> `:''}${esc(r.de)}</b><span class="small" style="color:${r.warn&&!r.picked?'var(--warn)':'var(--fg2)'}">${esc(r.ca)}</span><span class="small" style="color:var(--fg3)">${esc(r.meta)}</span></span></div>
+ ${r.note?`<div class="note">${esc(r.note)}</div>`:''}
+ ${r.warn&&!r.picked?`<div class="row" style="gap:8px;flex-wrap:wrap">${r.choices.map(ch=>`<button class="pick" data-act="pickDraft" data-v="${ch}">${ch}</button>`).join('')}</div>`:''}
+</div>`).join('')}${R.more?`<div class="muted small" style="text-align:center;padding:6px">i ${R.more} més del mateix tema</div>`:''}</div>
+<div class="foot"><button class="btn primary" data-act="save" ${n?'':'disabled'}>Desa ${n} targetes</button></div></div>`; };
+
+/* Frases (cloze) */
+function makeQ(){ const c=shuffle(CARDS)[0]; const [de,ca,t]=c.ex[Math.floor(Math.random()*3)]; const others=shuffle(CARDS.filter(x=>x.id!==c.id&&x.pos===c.pos)).slice(0,3).map(x=>{const e=x.ex[0];return e[2]}); return {c,de,ca,t,opts:shuffle([t,...others])}; }
+V.cloze = () => { const z=S.cloze; if(!z.q) z.q=makeQ(); const q=z.q; const answered=z.picked!==null; const ok=answered&&fold(z.picked)===fold(q.t);
+ const i=q.de.indexOf(q.t); const gap=`<span class="gap ${answered?(ok?'ok':'bad'):''}">${answered?esc(q.t):'&nbsp;'}</span>`;
+ const sent=esc(q.de.slice(0,i))+gap+esc(q.de.slice(i+q.t.length));
+return `<div class="app">${statusBar()}${topBar('Frases')}
+<div class="scroll" style="gap:14px">
+ <div class="prog"><div class="track"><i style="width:${(z.n%10)*10}%;background:var(--ok)"></i></div><span class="muted small" style="font-variant-numeric:tabular-nums">${z.n%10+1} / 10</span></div>
+ <div class="chips">${[['choice','Tria'],['type','Escriu']].map(([k,l])=>`<button class="chip" aria-pressed="${z.mode===k}" data-act="clozeMode" data-v="${k}">${l}</button>`).join('')}</div>
+ <section class="card raised" style="gap:12px;padding:22px">
+  <div class="row muted small" style="gap:8px"><span style="font-size:18px">${q.c.img}</span>${esc(q.c.theme)}</div>
+  <p style="margin:0;font-family:var(--display);font-weight:700;font-size:24px;line-height:1.4">${sent}</p>
+  <p class="muted" style="margin:0;font-style:italic">${esc(q.ca)}</p>
+ </section>
+ ${!answered? (z.mode==='choice' ? `<div class="grid2">${q.opts.map(o=>`<button class="opt" data-act="pickOpt" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`
+  : `<form class="row" style="gap:8px" data-form="cloze"><input class="input" id="clozeIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Paraula que falta" placeholder="Escriu la paraula" value="${esc(z.typed)}"><button class="btn primary" style="width:auto" type="submit">Comprova</button></form><div class="keys">${['ä','ö','ü','ß'].map(k=>`<button data-act="key" data-v="${k}">${k}</button>`).join('')}</div><p class="hint" style="margin:0;text-align:left">Pots escriure ae, oe, ue o ss.</p>`)
+ : `${z.mode==='choice'?`<div class="grid2">${q.opts.map(o=>{const isR=fold(o)===fold(q.t),isP=o===z.picked;return `<button class="opt ${isR?'ok':isP?'bad':''}" disabled>${isR?ic('check',18,2.4):isP?ic('x',18,2.4):''}${esc(o)}</button>`}).join('')}</div>`:''}
+ <div class="fb ${ok?'ok':'bad'}"><b>${ok?'Correcte.':'Era '+esc(q.t)+'.'}</b><span class="small">${label(q.c)}: ${esc(q.c.ca)}${q.c.pl?'. pl. '+esc(q.c.pl):''}</span></div>
+ <button class="btn primary" data-act="clozeNext">Següent</button>`}
+</div>${tabs('cloze')}</div>`; };
+
+/* Textos */
+const TEXTS=DATA.texts; const gapsOf=t=>[...t.text.matchAll(/\[\[(.+?)\]\]/g)].map(m=>m[1]);
+const TEMOJI={'El cos':'🫁','Salut i esport':'🏃','Casa i vida diària':'🏠','Tràmits i diners':'🏛️','Feina i professions':'💼','El temps':'⛅','Verbs amb sein (Perfekt)':'✈️','Família i relacions':'💍','Aspecte i roba':'🕵️','Estudis':'🎓','Caràcter':'🛋️','Connectors i adverbis':'🎓','Animals':'🐄','Opinió i comunicació':'📞'};
+const TPROG={'t-arzt':[7,7],'t-amt':[3,7],'t-job':[0,8]};
+V.texts = () => `<div class="app">${statusBar()}${topBar('Textos')}
+<div class="scroll" style="gap:10px;overflow:hidden">
+ <p class="muted" style="margin:0 0 4px">Textos curts amb les teves paraules. Omple els buits.</p>
+ ${TEXTS.slice(0,5).map(t=>{const n=gapsOf(t).length;const st=S.text.done[t.id]||TPROG[t.id]||[0,n];const done=st[0]===st[1];return `<button class="deck" data-act="openText" data-v="${t.id}"><span class="thumb">${TEMOJI[t.theme]||'📄'}</span><span style="flex:1;min-width:0"><b style="display:block">${esc(t.title)}</b><span class="muted small">${esc(t.theme)} · ${n} buits</span>${st[0]&&!done?`<span class="bar"><i style="width:${st[0]/st[1]*100}%"></i></span>`:''}</span>${done?`<span class="due" style="background:var(--ok-soft);color:var(--ok)">Fet</span>`:st[0]?`<span class="muted small" style="font-variant-numeric:tabular-nums">${st[0]}/${st[1]}</span>`:`<span class="due">Nou</span>`}<span style="color:var(--fg3)">${ic('right',20)}</span></button>`}).join('')}
+ <button class="muted small" style="text-decoration:underline;min-height:44px">Veure els ${TEXTS.length} textos</button>
+</div>${tabs('texts')}</div>`;
+V.text = () => { const t=S.text, T=TEXTS.find(x=>x.id===t.id), G=gapsOf(T); let k=-1;
+ const html=esc(T.text).replace(/\[\[(.+?)\]\]/g,()=>{k++;const f=t.fills[k];const cls=t.checked?(f===G[k]?'ok':'bad'):(k===t.sel?'sel':'');return `<button class="gap ${cls}" data-act="selGap" data-v="${k}" aria-label="Buit ${k+1}">${f?esc(f):'&nbsp;'}</button>`});
+ const used=Object.values(t.fills); const filled=used.length; const right=G.filter((g,i)=>t.fills[i]===g).length;
+return `<div class="app">${statusBar()}
+<div class="row" style="padding:4px 20px 4px 8px;gap:4px"><button class="iconbtn" data-act="closeText" aria-label="Torna als textos">${ic('left',24)}</button><div class="prog" style="flex:1"><div class="track"><i style="width:${filled/G.length*100}%;background:var(--ok)"></i></div><span class="muted small" style="font-variant-numeric:tabular-nums">${filled} / ${G.length}</span></div></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;padding:4px 20px 0;min-height:0">
+ <div class="row"><h3 class="h3" style="flex:1;font-size:22px">${esc(T.title)}</h3><span style="font-size:20px">${TEMOJI[T.theme]||''}</span></div>
+ <div class="textp">${html}</div>
+ <button class="muted small" style="align-self:flex-start;text-decoration:underline;min-height:32px" data-act="toggleCa">${t.ca?'Amaga':'Mostra'} la traducció</button>
+ ${t.ca?`<p class="muted small" style="margin:0;line-height:1.45">${esc(T.ca)}</p>`:''}
+</div>
+<div style="padding:10px 20px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;background:var(--surface);border-top:1px solid var(--border)">
+ ${t.checked?`<div class="fb ${right===G.length?'ok':'bad'}"><b>${right} de ${G.length} correctes</b><span class="small">${right===G.length?'Perfecte.':'Toca un buit vermell per tornar-ho a provar.'}</span></div>`
+ :`<div class="chips" style="gap:6px">${t.bank.map(w=>`<button class="chip" ${used.includes(w)?'disabled style="opacity:.3"':''} data-act="fill" data-v="${esc(w)}">${esc(w)}</button>`).join('')}</div>`}
+ <div class="row" style="gap:10px">${t.checked?`<button class="btn secondary" data-act="textReset">Torna a començar</button><button class="btn primary" data-act="closeText">Altres textos</button>`:`<button class="btn secondary" data-act="textClear">Esborra</button><button class="btn primary" data-act="textCheck" ${filled?'':'disabled'}>Comprova</button>`}</div>
+</div></div>`; };
+function openText(id){ const T=TEXTS.find(x=>x.id===id); const G=gapsOf(T); const others=shuffle(TEXTS.filter(x=>x.id!==id).flatMap(gapsOf)).slice(0,2);
+ S.text={...S.text,id,fills:{},sel:0,checked:false,ca:false,bank:shuffle([...G,...others])}; go('text'); }
+
+/* Perfil */
+V.profile = () => { const tab=S.profTab||'prog';
+ const st=S.study; if(!st.queue||st.key!==rfKey()) buildRepas(); const left=S.study.queue.slice(S.study.i); const due=left.filter(q=>!q.isNew).length, nw=left.filter(q=>q.isNew).length, tot=due+nw;
+ const week=[18,22,9,14,0,0,0], maxW=Math.max(...week);
+ const prog = `
+ <section class="hero" aria-label="Repàs d'avui" style="gap:14px;padding:16px 18px 18px">
+  <div class="row" style="gap:16px;align-items:center">
+   <div class="ring" aria-hidden="true" style="width:104px;height:104px">${tot?ring(due,nw,0).replace('width="128" height="128"','width="104" height="104"'):''}<div class="ring-in"><b style="font-size:32px">${tot}</b><span>per avui</span></div></div>
+   <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+    <span class="hero-eyebrow">Repàs d'avui</span>
+    <span class="row" style="gap:8px"><i class="dot" style="background:var(--on-ink)"></i><b>${due}</b> per repassar</span>
+    <span class="row" style="gap:8px"><i class="dot" style="background:var(--accent)"></i><b>${nw}</b> noves</span>
+    <span class="hero-sub">Uns ${Math.max(1,Math.round(tot*.6))} minuts</span>
+   </div>
+  </div>
+  <button class="btn accent" data-go="today" ${tot?'':'disabled'}>${tot?'Comença el repàs':'Repàs fet per avui'}</button>
+ </section>
+ <section class="card" style="padding:14px 16px;gap:10px">
+  <div class="row" style="gap:8px"><span style="color:var(--accent-text)">${ic('flame',20)}</span><b style="flex:1">Ratxa de 12 dies</b><span class="muted small">Rècord 21</span></div>
+  <div class="days">${['Dl','Dt','Dc','Dj','Dv','Ds','Dg'].map((d,i)=>`<div class="day ${i<3?'done':i===3?'today':''}">${d}<b>${i<3?ic('check',18,2.4):i===3?'Avui'.slice(0,0)+'24':21+i}</b></div>`).join('')}</div>
+ </section>
+ <div class="stats">
+  <div class="stat"><b>412</b><span class="muted small">consolidades</span></div>
+  <div class="stat"><b>86%</b><span class="muted small">encerts</span></div>
+  <div class="stat"><b>63</b><span class="muted small">min setmana</span></div>
+ </div>
+ <section class="card" style="padding:14px 16px;gap:8px">
+  <div class="row" style="justify-content:space-between"><b>586 paraules</b><span class="muted small" style="color:var(--ok);font-weight:700">+24 aquesta setmana</span></div>
+  <div class="kbar" aria-hidden="true"><i style="flex:412;background:var(--good)"></i><i style="flex:96;background:var(--accent)"></i><i style="flex:78;background:var(--hover)"></i></div>
+  <div class="row muted" style="gap:10px;font-size:12.5px;white-space:nowrap"><span class="row" style="gap:6px"><i class="dot" style="background:var(--good)"></i>412 consolidades</span><span class="row" style="gap:6px"><i class="dot" style="background:var(--accent)"></i>96 aprenent</span><span class="row" style="gap:6px"><i class="dot" style="background:var(--hover)"></i>78 sense veure</span></div>
+ </section>`;
+ const aj = `
+ <div class="grp"><div class="eyebrow">Estudi</div>
+ <div class="settings">${[['globe','Llengües',`${S.base.toUpperCase()} → ${S.target.toUpperCase()}`],['sliders','Noves per dia',String(S.opt.rf.newPerDay)],['repeat','Direcció',{de:'DE → CA',ca:'CA → DE',mix:'Barrejat'}[S.opt.rf.dir]],['bell','Recordatori','19:00']].map(([i,l,v])=>`<button class="it" ${l==='Noves per dia'||l==='Direcció'?'data-act="sheet" data-v="opt-rf"':''}><span class="muted">${ic(i,20)}</span><span class="grow">${l}</span><span class="muted">${v}</span><span style="color:var(--fg3)">${ic('right',18)}</span></button>`).join('')}</div></div>
+ <div class="grp"><div class="eyebrow">Aparença</div>
+ <div class="settings"><div class="it"><span class="muted">${ic('moon',20)}</span><span class="grow">Tema</span><div class="mini-seg">${themeBtns()}</div></div><div class="it" style="flex-wrap:wrap;padding-block:10px"><span class="muted">${ic('pencil',20)}</span><span class="grow">Lletra</span><div class="mini-seg">${fontBtns()}</div></div></div></div>
+ <div class="grp"><div class="eyebrow">Compte</div>
+ <div class="settings"><button class="it"><span class="muted">${ic('download',20)}</span><span class="grow">Exporta les meves dades</span><span style="color:var(--fg3)">${ic('right',18)}</span></button><button class="it" data-go="welcome"><span class="muted">${ic('logout',20)}</span><span class="grow">Tanca la sessió</span></button><button class="it" style="color:var(--bad)">${ic('x',20)}<span class="grow">Elimina el compte</span></button></div></div>`;
+return `<div class="app">${statusBar()}
+<div class="row" style="padding:4px 20px 6px 8px;gap:10px"><button class="iconbtn" data-act="back" aria-label="Enrere">${ic('left',24)}</button><span style="width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font-weight:700;font-size:14px;flex:none">JB</span><span style="flex:1;min-width:0"><b style="font-family:var(--display);font-size:20px;display:block;line-height:1.1">Jordi</b><span class="muted small">${LANGS.find(l=>l[0]===S.base)[1]} → ${LANGS.find(l=>l[0]===S.target)[1]} · B1</span></span></div>
+<div style="padding:0 20px 8px"><div class="seg" role="tablist">${[['prog','Progrés'],['aj','Ajustos']].map(([k,l])=>`<button role="tab" aria-pressed="${tab===k}" aria-selected="${tab===k}" data-act="profTab" data-v="${k}">${l}</button>`).join('')}</div></div>
+<div class="scroll ${tab==='prog'?'prog-grid':'profile-grid'}" style="gap:12px;padding-top:4px">${tab==='prog'?prog:aj}</div></div>`; };
+
+const themeBtns = () => [['light','Clar'],['dark','Fosc'],['auto','Auto']].map(([k,l])=>`<button aria-pressed="${S.theme===k}" data-act="theme" data-v="${k}">${l}</button>`).join('');
+
+/* ---------- router ---------- */
+let prev='today'; let lastScreen=null;
+const NAV=[['today','Repàs','repeat'],['all','Totes','layers'],['cloze','Frases','message'],['texts','Textos','file']];
+const sideHTML=()=>`<aside class="side"><div class="row" style="gap:10px;padding:4px 8px 18px">${logo(30)}<b style="font-family:var(--display);font-size:20px;letter-spacing:-.02em">Wortkarten</b></div><button class="btn accent" data-go="create" style="min-height:46px">${ic('plus',20,2.2)}Crea targetes</button><nav class="side-nav">${NAV.map(([id,l,i])=>`<button data-go="${id}" ${(S.screen===id||false||(id==='texts'&&S.screen==='text'))?'aria-current="page"':''}>${ic(i,20)}${l}</button>`).join('')}</nav><div style="margin-top:auto;display:flex;flex-direction:column;gap:10px"><span class="streak" style="align-self:flex-start">${ic('flame',16,2.2)}12 dies</span><button class="side-me" data-go="profile" ${S.screen==='profile'?'aria-current="page"':''}><span class="av">JB</span><span style="display:flex;flex-direction:column;text-align:left"><b>Jordi</b><span class="muted small">CA → DE · B1</span></span></button></div></aside>`;
+function go(s){ if(s==='profile'&&S.screen!=='profile') prev=S.screen; if(s==='lang') S.langStep=1; S.screen=s; render(); }
+const JUMP=[['welcome','Benvinguda'],['lang','Idiomes'],['today','Repàs'],['all','Totes (pràctica lliure)'],['create','Crear amb IA'],['refine','Crear: afinar petició'],['review','Revisió de la IA'],['cloze','Frases'],['texts','Textos'],['text','Text amb buits'],['profile','Perfil']];
+function render(){
+  if(S.screen==='refine'&&!S.refine){ S.create.src='ai'; S.refine={subs:['Facturació','Control de seguretat','Embarcament','Retards i cancel·lacions'],n:20,level:'B1',kind:'mix',dest:'new',name:'Aeroport',existing:'Natura i vacances'}; }
+  if(S.screen==='review'&&!S.review) buildReview();
+  if(S.screen==='text'&&!S.text.id){ const T=TEXTS[0]; S.text={...S.text,id:T.id,fills:{},sel:0,checked:false,ca:false,bank:shuffle([...gapsOf(T),'Bauch','Fieber'])}; }
+  const changed = S.screen!==lastScreen; lastScreen=S.screen;
+  const wideOk = S.view==='web' && !['welcome','lang'].includes(S.screen); const web = wideOk && S.webNav==='side';
+  app.classList.toggle('is-web', S.view==='web'); app.classList.toggle('has-side', web); app.classList.toggle('wide', wideOk); app.classList.toggle('web-bottom', wideOk && S.webNav==='bottom');
+  app.innerHTML = (web?sideHTML():'') + `<div class="view${changed?' enter':''}">` + V[S.screen]().replace(/^<div class="app">/,'').replace(/<\/div>$/,'') + (S.sheet?sheetHTML().replace('class="sheet-wrap"',S.sheetAnim?'class="sheet-wrap anim"':'class="sheet-wrap"'):'') + `</div>`;
+  S.anim=false; S.sheetAnim=false;
+  document.getElementById('url').textContent='wortkarten.app/'+({today:'repas',all:'totes',create:'crear',cloze:'frases',texts:'textos',text:'textos/beim-arzt',study:'repas',summary:'repas/fet',review:'crear/revisio',refine:'crear/afinar',profile:'perfil',welcome:'',lang:'benvinguda'}[S.screen]||'');
+  document.getElementById('navSeg').innerHTML=[['side','Lateral'],['bottom','A baix']].map(([k,l])=>`<button aria-pressed="${S.webNav===k}" data-act="webNav" data-v="${k}">${l}</button>`).join(''); document.getElementById('navWrap').hidden=S.view!=='web';
+  document.getElementById('viewSeg').innerHTML=[['mobile','Mòbil'],['web','Web']].map(([k,l])=>`<button aria-pressed="${S.view===k}" data-act="viewMode" data-v="${k}">${l}</button>`).join('');
+  document.querySelector('.stage').classList.toggle('mode-web', S.view==='web');
+  if(S.toast) app.insertAdjacentHTML('beforeend',`<div class="toast" role="status">${ic('check',20,2.4)}${esc(S.toast)}</div>`);
+  document.getElementById('jump').innerHTML = JUMP.map(([k,l])=>`<button data-go="${k}" aria-current="${S.screen===k}">${l}</button>`).join('');
+  document.getElementById('themeSeg').innerHTML = themeBtns();
+  document.getElementById('fontSeg').innerHTML = fontBtns();
+  document.getElementById('fontNote').textContent = FONTS[S.font][1]+' + '+FONTS[S.font][2]+'. '+FONTS[S.font][3];
+  bindSwipe();
+  const ta=app.querySelector('textarea'); if(ta) ta.oninput=e=>{S.create.text=e.target.value; const n=S.create.text.split('\n').map(s=>s.trim()).filter(Boolean).length; const b=app.querySelector('[data-act="generate"]'); if(b){b.disabled=!n; b.lastChild.textContent='Crea '+n+' targetes';} const c=app.querySelector('#wcount'); if(c) c.textContent=n+' / 50';};
+  const ap=app.querySelector('#aiPrompt'); if(ap) ap.oninput=e=>S.create.ai=e.target.value;
+  const dn=app.querySelector('#deckName'); if(dn) dn.oninput=e=>S.refine.name=e.target.value;
+  const ci=app.querySelector('#clozeIn'); if(ci) ci.oninput=e=>S.cloze.typed=e.target.value;
+  const f=app.querySelector('[data-form="cloze"]'); if(f) f.onsubmit=e=>{e.preventDefault(); if(!S.cloze.typed.trim()) return; S.cloze.picked=S.cloze.typed; render();};
+}
+function toast(m){ S.toast=m; render(); setTimeout(()=>{S.toast=null; render();},1800); }
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-go],[data-act]'); if(!el) return;
+  if(el.dataset.go){ go(el.dataset.go); return; }
+  const a=el.dataset.act, v=el.dataset.v;
+  if(a==='closeSheet' && e.target.closest('[data-stop]') && el.classList.contains('sheet-wrap')) return;
+  const A = {
+    pickLang(){ S[S.langStep===1?'base':'target']=v; render(); },
+    langNext(){ if(S.langStep===1){ if(S.target===S.base) S.target=S.base==='de'?'en':'de'; S.langStep=2; render(); } else go('today'); },
+    langBack(){ S.langStep=1; render(); },
+    startStudy, flip(){ flipStudy(); },
+    rate(){ rateStudy(v); },
+    openDeck(){ S.all.decks=CARDS.some(c=>c.theme===v)?[v]:[]; resetAll(); go('all'); },
+    allYes(){ flyOut(1); }, allNo(){ flyOut(-1); },
+    allShuffle(){ resetAll(); render(); },
+    sheet(){ S.sheet=v; S.sheetAnim=true; render(); }, closeSheet(){ S.sheet=null; render(); },
+    opt(){ const k=el.dataset.k, tgt=S.sheet.slice(4), o=S.opt[tgt]; o[k]=k==='showWord'?v==='true':(k==='dir'?v:(v==='all'?'all':+v)); if(tgt==='all'&&k!=='showWord') resetAll(); try{localStorage.setItem('wk-opt',JSON.stringify(S.opt))}catch(e){} render(); },
+    setPos(){ const a=S[S.sheet]; a.pos=a.pos.includes(v)?a.pos.filter(x=>x!==v):[...a.pos,v]; if(S.sheet==='all') resetAll(); render(); }, setDeck(){ const a=S[S.sheet]; if(v==='Totes') a.decks=[]; else a.decks=a.decks.includes(v)?a.decks.filter(x=>x!==v):[...a.decks,v]; if(S.sheet==='all') resetAll(); render(); },
+    src(){ S.create.src=v; render(); }, fakeUpload(){ generate(); }, generate,
+    toggleDraft(){ const r=S.review.find(x=>x.id===v); r.on=!r.on; render(); },
+    pickDraft(){ const r=S.review.find(x=>x.id==='r4'); r.picked=v; r.de=v; r.ca=v==='durchsichtig'?'transparent':'mitjà, normal'; r.meta='adjectiu · 3 frases'; r.on=true; r.img=v==='durchsichtig'?'🔍':'📊'; render(); },
+    save(){ const R=S.review; const n=R.filter(r=>r.on).length+(R.more||0); const ai=S.create.src==='ai'; const dest=ai?(S.refine.dest==='new'?S.refine.name+' (mazo nou)':S.refine.existing):'Llibreta B1'; S.review=null; if(!ai) S.create.text=''; go('all'); toast(n+' targetes desades a '+dest); },
+    aiRefine(){ aiRefine(); }, aiEx(){ S.create.ai='Vull targetes per '+v.toLowerCase(); render(); },
+    refSub(){ const r=S.refine; r.subs=r.subs.includes(v)?r.subs.filter(x=>x!==v):[...r.subs,v]; render(); },
+    refSet(){ const k=el.dataset.k; if(e.target.closest('input')) return; S.refine[k]=k==='n'?+v:v; render(); },
+    clozeMode(){ S.cloze.mode=v; S.cloze.picked=null; S.cloze.typed=''; render(); },
+    pickOpt(){ S.cloze.picked=v; render(); },
+    key(){ const i=app.querySelector('#clozeIn'); S.cloze.typed=(i?i.value:S.cloze.typed)+v; render(); const j=app.querySelector('#clozeIn'); if(j){j.focus(); j.setSelectionRange(j.value.length,j.value.length);} },
+    clozeNext(){ const z=S.cloze; z.n++; z.q=null; z.picked=null; z.typed=''; render(); },
+    selGap(){ const t=S.text; const k=+v; const G=gapsOf(TEXTS.find(x=>x.id===t.id)); if(t.checked){ if(t.fills[k]!==G[k]){ delete t.fills[k]; t.checked=false; t.sel=k; } } else { if(t.fills[k]) delete t.fills[k]; t.sel=k; } render(); },
+    fill(){ const t=S.text; const G=gapsOf(TEXTS.find(x=>x.id===t.id)); t.fills[t.sel]=v; for(let i=0;i<G.length;i++){ if(!t.fills[i]){ t.sel=i; break; } } render(); },
+    textCheck(){ const t=S.text; const G=gapsOf(TEXTS.find(x=>x.id===t.id)); t.checked=true; t.done[t.id]=[G.filter((g,i)=>t.fills[i]===g).length,G.length]; render(); }, textClear(){ Object.assign(S.text,{fills:{},sel:0,checked:false}); render(); }, textReset(){ Object.assign(S.text,{fills:{},sel:0,checked:false}); render(); },
+    openText(){ openText(v); }, closeText(){ go('texts'); }, toggleCa(){ S.text.ca=!S.text.ca; render(); },
+    profTab(){ S.profTab=v; render(); },
+    theme(){ S.theme=v; applyTheme(); render(); },
+    webNav(){ S.webNav=v; try{localStorage.setItem('wk-nav',v)}catch(e){} render(); },
+    viewMode(){ S.view=v; try{localStorage.setItem('wk-view',v)}catch(e){} if(v==='web'&&['welcome','lang'].includes(S.screen)) S.screen='today'; render(); },
+    font(){ S.font=v; applyFont(); render(); },
+    back(){ go(prev==='profile'?'today':prev); }, noop(){}
+  };
+  if(A[a]) A[a]();
+});
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input,textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (S.sheet) { if (e.key==='Escape'){ S.sheet=null; render(); } return; }
+  if (S.screen==='today' && S.study.queue && S.study.queue[S.study.i]) {
+    if (e.key===' '||e.key==='Enter') { e.preventDefault(); flipStudy(); }
+    else if (S.study.revealed && ['1','2','3','4'].includes(e.key)) { e.preventDefault(); rateStudy(['again','hard','good','easy'][+e.key-1]); }
+  } else if (S.screen==='all' && S.all.order.length) {
+    if (e.key===' '||e.key==='Enter') { e.preventDefault(); const el=document.getElementById('swipe'); S.all.flipped=!S.all.flipped; if(el){ el.classList.remove('enter'); el.classList.toggle('flipped',S.all.flipped);} }
+    else if (e.key==='ArrowRight') { e.preventDefault(); flyOut(1); }
+    else if (e.key==='ArrowLeft') { e.preventDefault(); flyOut(-1); }
+  }
+});
+applyTheme(); applyFont(); render();
+</script>
