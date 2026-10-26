@@ -41,6 +41,14 @@ function slug(title: string): string {
   return value === "" ? "importades" : value;
 }
 
+/** Id de mazo derivat del títol que no col·lisiona amb cap de ja usat. */
+function uniqueDeckId(title: string, used: Set<string>): string {
+  const base = slug(title);
+  let id = base;
+  for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
+  return id;
+}
+
 function nonBlank(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -56,7 +64,9 @@ export function mapLegacyCards(input: unknown, options: LegacyImportOptions): Le
     throw new TypeError("El fitxer d'importació ha de ser una llista de targetes");
   }
 
+  /** Mazos pel títol (no pel slug: dos títols diferents no s'han de fusionar). */
   const decks = new Map<string, Deck>();
+  const usedDeckIds = new Set<string>();
   const cards: Card[] = [];
   const skipped: LegacyImportResult["skipped"] = [];
 
@@ -69,7 +79,8 @@ export function mapLegacyCards(input: unknown, options: LegacyImportOptions): Le
     const l = legacy.data;
 
     const deckTitle = nonBlank(l.cat) ?? DEFAULT_DECK_TITLE;
-    const deckId = slug(deckTitle);
+    const existingDeck = decks.get(deckTitle);
+    const deckId = existingDeck?.id ?? uniqueDeckId(deckTitle, usedDeckIds);
 
     const examples = l.ex
       .map(([sentence = "", translation = "", cloze = ""]) => ({
@@ -108,9 +119,10 @@ export function mapLegacyCards(input: unknown, options: LegacyImportOptions): Le
     }
 
     cards.push(card.data);
-    if (!decks.has(deckId)) {
+    if (!existingDeck) {
+      usedDeckIds.add(deckId);
       decks.set(
-        deckId,
+        deckTitle,
         deckSchema.parse({
           id: deckId,
           title: deckTitle,

@@ -1,27 +1,6 @@
 import { Rating, State, createEmptyCard, fsrs, type Card as FsrsCard, type Grade } from "ts-fsrs";
 
-export type Direction = "recognize" | "produce";
-export type ReviewRating = "again" | "hard" | "good" | "easy";
-export type SchedulingState = "new" | "learning" | "review" | "relearning";
-
-/**
- * Estat de repetició espaiada d'una targeta en una direcció. Només JSON pla
- * (dates en ISO) perquè es pugui desar tal qual a IndexedDB i a Postgres.
- */
-export interface CardState {
-  cardId: string;
-  direction: Direction;
-  due: string;
-  stability: number;
-  difficulty: number;
-  elapsedDays: number;
-  scheduledDays: number;
-  learningSteps: number;
-  reps: number;
-  lapses: number;
-  state: SchedulingState;
-  lastReview?: string;
-}
+import type { CardState, Direction, ReviewRating, SchedulingState } from "./schemas";
 
 /** Interval mínim, en dies, perquè s'activi la direcció "produir". */
 const PRODUCE_ACTIVATION_DAYS = 3;

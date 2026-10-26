@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { CardRepository, ReviewLog } from "../repository";
+import type { CardRepository } from "../repository";
 import { newCardState, reviewState } from "../scheduler";
-import type { Card, Deck } from "../schemas";
+import type { Card, Deck, ReviewLog } from "../schemas";
 
 const NOW = "2026-10-26T10:00:00.000Z";
 
@@ -249,6 +249,104 @@ export function describeCardRepository(label: string, create: () => Promise<Card
         ]);
         const due = await repo.listDueStates(NOW, 2);
         expect(due.map((s) => s.cardId)).toEqual(["a", "b"]);
+      });
+    });
+
+    describe("validació", () => {
+      it("addCards rebutja tot el lot si una targeta és invàlida i no desa res", async () => {
+        const bad = { ...makeCard({ id: "x", term: "Weg" }), pos: "pronoun" } as unknown as Card;
+        await expect(repo.addCards([makeCard(), bad])).rejects.toThrow();
+        expect(await repo.listCards()).toEqual([]);
+      });
+
+      it("updateCard rebutja una targeta invàlida", async () => {
+        await repo.addCards([makeCard()]);
+        const bad = { ...makeCard(), term: "   " };
+        await expect(repo.updateCard(bad)).rejects.toThrow();
+        expect((await repo.getCard("richtung"))?.term).toBe("Richtung");
+      });
+
+      it("putDeck rebutja un mazo sense títol", async () => {
+        await expect(repo.putDeck(makeDeck({ title: "" }))).rejects.toThrow();
+        expect(await repo.listDecks()).toEqual([]);
+      });
+
+      it("putStates rebutja un estat amb una data que no és canònica i no desa res", async () => {
+        const good = newCardState("a", "recognize", NOW);
+        const bad = { ...newCardState("b", "recognize", NOW), due: "ahir" };
+        await expect(repo.putStates([good, bad])).rejects.toThrow();
+        expect(await repo.listStates()).toEqual([]);
+      });
+
+      it("putStates rebutja un estat de planificació desconegut", async () => {
+        const bad = { ...newCardState("a", "recognize", NOW), state: "Review" } as never;
+        await expect(repo.putStates([bad])).rejects.toThrow();
+      });
+
+      it("appendReviewLog rebutja un registre invàlid", async () => {
+        const bad = { ...makeLog(), rating: "meh" } as never;
+        await expect(repo.appendReviewLog(bad)).rejects.toThrow();
+        expect(await repo.listReviewLogs()).toEqual([]);
+      });
+    });
+
+    describe("dates i límits", () => {
+      it("listReviewLogs inclou un registre del mateix instant encara que 'since' no porti mil·lisegons", async () => {
+        await repo.appendReviewLog(makeLog({ id: "mateix", reviewedAt: "2026-10-26T22:00:00.000Z" }));
+        const ids = (await repo.listReviewLogs("2026-10-26T22:00:00Z")).map((l) => l.id);
+        expect(ids).toEqual(["mateix"]);
+      });
+
+      it("listDueStates no dona per pendent una targeta que toca mig segon després de 'now'", async () => {
+        const later = { ...newCardState("a", "recognize", NOW), due: "2026-10-26T10:00:00.500Z" };
+        await repo.putStates([later]);
+        expect(await repo.listDueStates("2026-10-26T10:00:00Z")).toEqual([]);
+      });
+
+      it("listDueStates amb límit 0 no torna res", async () => {
+        await repo.putStates([newCardState("a", "recognize", "2026-10-24T10:00:00.000Z")]);
+        expect(await repo.listDueStates(NOW, 0)).toEqual([]);
+      });
+    });
+
+    describe("ordre dels resultats", () => {
+      it("listCards, listDecks i listStates van per id, comparant per unitat de codi", async () => {
+        await repo.addCards([
+          makeCard({ id: "b", term: "bb" }),
+          makeCard({ id: "B", term: "BB-uppercase-id" }),
+          makeCard({ id: "a", term: "aa" }),
+        ]);
+        expect((await repo.listCards()).map((c) => c.id)).toEqual(["B", "a", "b"]);
+
+        await repo.putDeck(makeDeck({ id: "z" }));
+        await repo.putDeck(makeDeck({ id: "Y" }));
+        expect((await repo.listDecks()).map((d) => d.id)).toEqual(["Y", "z"]);
+
+        await repo.putStates([
+          newCardState("b", "recognize", NOW),
+          newCardState("a", "recognize", NOW),
+        ]);
+        expect((await repo.listStates()).map((s) => s.cardId)).toEqual(["a", "b"]);
+      });
+
+      it("en un empat de data, listDueStates desempata per targeta i direcció", async () => {
+        await repo.putStates([
+          newCardState("b", "recognize", NOW),
+          newCardState("a", "recognize", NOW),
+          newCardState("a", "produce", NOW),
+        ]);
+        const due = await repo.listDueStates(NOW);
+        expect(due.map((s) => `${s.cardId}:${s.direction}`)).toEqual([
+          "a:produce",
+          "a:recognize",
+          "b:recognize",
+        ]);
+      });
+
+      it("en un empat de data, listReviewLogs desempata per id", async () => {
+        await repo.appendReviewLog(makeLog({ id: "z" }));
+        await repo.appendReviewLog(makeLog({ id: "a" }));
+        expect((await repo.listReviewLogs()).map((l) => l.id)).toEqual(["a", "z"]);
       });
     });
 

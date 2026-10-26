@@ -52,3 +52,55 @@ export const deckSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 export type Deck = z.infer<typeof deckSchema>;
+
+/**
+ * Instant canònic: sempre `AAAA-MM-DDTHH:MM:SS.mmmZ`. Amb aquest format
+ * l'ordre alfabètic és el cronològic, i IndexedDB i Postgres ordenen igual.
+ */
+const instant = z.iso.datetime({ precision: 3 });
+
+export const directionSchema = z.enum(["recognize", "produce"]);
+export type Direction = z.infer<typeof directionSchema>;
+
+export const schedulingStateSchema = z.enum(["new", "learning", "review", "relearning"]);
+export type SchedulingState = z.infer<typeof schedulingStateSchema>;
+
+export const ratingSchema = z.enum(["again", "hard", "good", "easy"]);
+export type ReviewRating = z.infer<typeof ratingSchema>;
+
+export const studyModeSchema = z.enum(["review", "free", "cloze"]);
+export type StudyMode = z.infer<typeof studyModeSchema>;
+
+const count = z.number().int().nonnegative();
+
+/**
+ * Estat de repetició espaiada d'una targeta en una direcció. Només JSON pla
+ * (dates en ISO) perquè es pugui desar tal qual a IndexedDB i a Postgres.
+ */
+export const cardStateSchema = z.object({
+  cardId: text,
+  direction: directionSchema,
+  due: instant,
+  stability: z.number().finite().nonnegative(),
+  difficulty: z.number().finite().nonnegative(),
+  elapsedDays: z.number().finite(),
+  scheduledDays: z.number().finite().nonnegative(),
+  learningSteps: count,
+  reps: count,
+  lapses: count,
+  state: schedulingStateSchema,
+  lastReview: instant.optional(),
+});
+export type CardState = z.infer<typeof cardStateSchema>;
+
+/** Un repàs concret. L'`id` el genera el client, així reenviar-lo és segur. */
+export const reviewLogSchema = z.object({
+  id: text,
+  cardId: text,
+  direction: directionSchema,
+  mode: studyModeSchema,
+  rating: ratingSchema,
+  reviewedAt: instant,
+  durationMs: count,
+});
+export type ReviewLog = z.infer<typeof reviewLogSchema>;

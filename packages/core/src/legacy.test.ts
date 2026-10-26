@@ -76,6 +76,26 @@ describe("mapLegacyCards", () => {
     expect(decks).toHaveLength(1);
   });
 
+  it("no fusiona mazos diferents els títols dels quals donen el mateix id", () => {
+    const cards = [
+      { ...richtung, id: "a", de: "Aa", cat: "Café" },
+      { ...richtung, id: "b", de: "Bb", cat: "Cafe" },
+      { ...richtung, id: "c", de: "Cc", cat: undefined },
+      { ...richtung, id: "d", de: "Dd", cat: "!!!" },
+    ];
+    const { decks, cards: mapped, skipped } = mapLegacyCards(cards, options);
+    expect(skipped).toEqual([]);
+    expect(mapped).toHaveLength(4);
+    expect(decks).toHaveLength(4);
+    expect(new Set(decks.map((d) => d.id)).size).toBe(4);
+    const titleOf = (cardId: string) =>
+      decks.find((d) => d.id === mapped.find((c) => c.id === cardId)?.deckId)?.title;
+    expect(titleOf("a")).toBe("Café");
+    expect(titleOf("b")).toBe("Cafe");
+    expect(titleOf("c")).toBe("Importades");
+    expect(titleOf("d")).toBe("!!!");
+  });
+
   it("posa les targetes sense llista a un mazo per defecte", () => {
     const noCat = { ...richtung, cat: undefined };
     const { decks, cards } = mapLegacyCards([noCat], options);

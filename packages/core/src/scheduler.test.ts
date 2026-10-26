@@ -5,8 +5,8 @@ import {
   previewIntervals,
   reviewState,
   shouldActivateProduce,
-  type CardState,
 } from "./scheduler";
+import type { CardState } from "./schemas";
 
 const t0 = "2026-10-26T10:00:00.000Z";
 

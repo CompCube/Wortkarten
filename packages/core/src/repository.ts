@@ -1,19 +1,5 @@
-import type { CardState, Direction, ReviewRating } from "./scheduler";
-import type { Card, Deck, Pos } from "./schemas";
+import type { Card, CardState, Deck, Direction, Pos, ReviewLog } from "./schemas";
 import { normalizeTerm } from "./terms";
-
-export type StudyMode = "review" | "free" | "cloze";
-
-/** Un repàs concret. L'`id` el genera el client, així reenviar-lo és segur. */
-export interface ReviewLog {
-  id: string;
-  cardId: string;
-  direction: Direction;
-  mode: StudyMode;
-  rating: ReviewRating;
-  reviewedAt: string;
-  durationMs: number;
-}
 
 export interface CardFilter {
   deckId?: string;
@@ -38,6 +24,11 @@ export function duplicateKey(targetLang: string, term: string): string {
 }
 
 /**
+ * Totes les escriptures validen amb Zod abans de desar i rebutgen (throw) si
+ * alguna dada és invàlida; un lot invàlid no desa res. Els instants són sempre
+ * canònics (`...mmmZ`) i els resultats van ordenats per id, comparant per
+ * unitat de codi, perquè totes les implementacions retornin el mateix.
+ *
  * Accés a les dades de l'app. Les pantalles només coneixen aquesta interfície:
  * ara hi ha una implementació a memòria i una a IndexedDB; Supabase serà la
  * tercera i haurà de passar els mateixos tests (`testing/repository-contract`).

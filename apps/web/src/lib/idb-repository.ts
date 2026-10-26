@@ -1,5 +1,9 @@
 import {
+  cardSchema,
+  cardStateSchema,
+  deckSchema,
   duplicateKey,
+  reviewLogSchema,
   type AddCardsResult,
   type Card,
   type CardFilter,
@@ -64,7 +68,7 @@ class IdbCardRepository implements CardRepository {
   }
 
   async putDeck(deck: Deck): Promise<void> {
-    await this.db.put("decks", deck);
+    await this.db.put("decks", deckSchema.parse(deck));
   }
 
   async listCards(filter?: CardFilter): Promise<Card[]> {
@@ -81,10 +85,12 @@ class IdbCardRepository implements CardRepository {
   }
 
   async addCards(cards: Card[]): Promise<AddCardsResult> {
+    // Es valida tot el lot abans d'obrir la transacció: un lot invàlid no desa res.
+    const parsed = cards.map((card) => cardSchema.parse(card));
     const result: AddCardsResult = { added: 0, duplicates: [] };
     const tx = this.db.transaction("cards", "readwrite");
     const byDupKey = tx.store.index("byDupKey");
-    for (const card of cards) {
+    for (const card of parsed) {
       const dupKey = duplicateKey(card.targetLang, card.term);
       const sameId = await tx.store.get(card.id);
       const sameTerm = await byDupKey.get(dupKey);
@@ -99,7 +105,8 @@ class IdbCardRepository implements CardRepository {
     return result;
   }
 
-  async updateCard(card: Card): Promise<void> {
+  async updateCard(input: Card): Promise<void> {
+    const card = cardSchema.parse(input);
     const tx = this.db.transaction("cards", "readwrite");
     const previous = await tx.store.get(card.id);
     if (!previous) {
@@ -138,8 +145,9 @@ class IdbCardRepository implements CardRepository {
   }
 
   async putStates(states: CardState[]): Promise<void> {
+    const parsed = states.map((state) => cardStateSchema.parse(state));
     const tx = this.db.transaction("states", "readwrite");
-    for (const state of states) await tx.store.put(state);
+    for (const state of parsed) await tx.store.put(state);
     await tx.done;
   }
 
@@ -148,13 +156,17 @@ class IdbCardRepository implements CardRepository {
   }
 
   listDueStates(now: string, limit?: number): Promise<CardState[]> {
-    // Les dates són ISO amb el mateix format: l'ordre alfabètic és el cronològic.
-    return this.db.getAllFromIndex("states", "byDue", IDBKeyRange.upperBound(now), limit);
+    // Count 0 vol dir "sense límit" a IndexedDB; aquí vol dir "res".
+    if (limit !== undefined && limit <= 0) return Promise.resolve([]);
+    // Els instants desats són canònics: l'ordre alfabètic és el cronològic.
+    const nowIso = new Date(now).toISOString();
+    return this.db.getAllFromIndex("states", "byDue", IDBKeyRange.upperBound(nowIso), limit);
   }
 
   async appendReviewLog(log: ReviewLog): Promise<void> {
+    const parsed = reviewLogSchema.parse(log);
     const tx = this.db.transaction("logs", "readwrite");
-    if (!(await tx.store.get(log.id))) await tx.store.add(log);
+    if (!(await tx.store.get(parsed.id))) await tx.store.add(parsed);
     await tx.done;
   }
 
@@ -162,7 +174,7 @@ class IdbCardRepository implements CardRepository {
     return this.db.getAllFromIndex(
       "logs",
       "byDate",
-      since === undefined ? undefined : IDBKeyRange.lowerBound(since),
+      since === undefined ? undefined : IDBKeyRange.lowerBound(new Date(since).toISOString()),
     );
   }
 }

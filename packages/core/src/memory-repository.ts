@@ -3,13 +3,35 @@ import {
   type AddCardsResult,
   type CardFilter,
   type CardRepository,
-  type ReviewLog,
 } from "./repository";
-import type { CardState, Direction } from "./scheduler";
-import type { Card, Deck } from "./schemas";
+import {
+  cardSchema,
+  cardStateSchema,
+  deckSchema,
+  reviewLogSchema,
+  type Card,
+  type CardState,
+  type Deck,
+  type Direction,
+  type ReviewLog,
+} from "./schemas";
 
 function stateKey(cardId: string, direction: Direction): string {
   return `${cardId}\u0000${direction}`;
+}
+
+/** Comparació per unitat de codi, com la d'IndexedDB (no la de localeCompare). */
+function compare(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function compareStates(a: CardState, b: CardState): number {
+  return compare(a.cardId, b.cardId) || compare(a.direction, b.direction);
+}
+
+/** Qualsevol instant vàlid, escrit en la forma canònica que desem. */
+function canonical(instant: string): string {
+  return new Date(instant).toISOString();
 }
 
 function matches(card: Card, filter: CardFilter | undefined): boolean {
@@ -32,15 +54,19 @@ export class InMemoryCardRepository implements CardRepository {
   private readonly logs = new Map<string, ReviewLog>();
 
   async listDecks(): Promise<Deck[]> {
-    return structuredClone([...this.decks.values()]);
+    return structuredClone([...this.decks.values()].sort((a, b) => compare(a.id, b.id)));
   }
 
   async putDeck(deck: Deck): Promise<void> {
-    this.decks.set(deck.id, structuredClone(deck));
+    const parsed = deckSchema.parse(deck);
+    this.decks.set(parsed.id, parsed);
   }
 
   async listCards(filter?: CardFilter): Promise<Card[]> {
-    return structuredClone([...this.cards.values()].filter((c) => matches(c, filter)));
+    const found = [...this.cards.values()]
+      .filter((c) => matches(c, filter))
+      .sort((a, b) => compare(a.id, b.id));
+    return structuredClone(found);
   }
 
   async getCard(id: string): Promise<Card | undefined> {
@@ -49,21 +75,24 @@ export class InMemoryCardRepository implements CardRepository {
   }
 
   async addCards(cards: Card[]): Promise<AddCardsResult> {
+    // Es valida tot el lot abans d'escriure: un lot invàlid no desa res.
+    const parsed = cards.map((card) => cardSchema.parse(card));
     const result: AddCardsResult = { added: 0, duplicates: [] };
-    for (const card of cards) {
+    for (const card of parsed) {
       const key = duplicateKey(card.targetLang, card.term);
       if (this.cards.has(card.id) || this.keys.has(key)) {
         result.duplicates.push(card.id);
         continue;
       }
-      this.cards.set(card.id, structuredClone(card));
+      this.cards.set(card.id, card);
       this.keys.set(key, card.id);
       result.added += 1;
     }
     return result;
   }
 
-  async updateCard(card: Card): Promise<void> {
+  async updateCard(input: Card): Promise<void> {
+    const card = cardSchema.parse(input);
     const previous = this.cards.get(card.id);
     if (!previous) throw new Error(`La targeta ${card.id} no existeix`);
     const key = duplicateKey(card.targetLang, card.term);
@@ -72,7 +101,7 @@ export class InMemoryCardRepository implements CardRepository {
       throw new Error(`El terme "${card.term}" ja és de la targeta ${owner}`);
     }
     this.keys.delete(duplicateKey(previous.targetLang, previous.term));
-    this.cards.set(card.id, structuredClone(card));
+    this.cards.set(card.id, card);
     this.keys.set(key, card.id);
   }
 
@@ -96,32 +125,33 @@ export class InMemoryCardRepository implements CardRepository {
   }
 
   async putStates(states: CardState[]): Promise<void> {
-    for (const state of states) {
-      this.states.set(stateKey(state.cardId, state.direction), structuredClone(state));
-    }
+    const parsed = states.map((state) => cardStateSchema.parse(state));
+    for (const state of parsed) this.states.set(stateKey(state.cardId, state.direction), state);
   }
 
   async listStates(): Promise<CardState[]> {
-    return structuredClone([...this.states.values()]);
+    return structuredClone([...this.states.values()].sort(compareStates));
   }
 
   async listDueStates(now: string, limit?: number): Promise<CardState[]> {
-    const limitMs = new Date(now).getTime();
+    if (limit !== undefined && limit <= 0) return [];
+    const nowIso = canonical(now);
     const due = [...this.states.values()]
-      .filter((s) => new Date(s.due).getTime() <= limitMs)
-      .sort((a, b) => a.due.localeCompare(b.due) || a.cardId.localeCompare(b.cardId));
+      .filter((s) => s.due <= nowIso)
+      .sort((a, b) => compare(a.due, b.due) || compareStates(a, b));
     return structuredClone(limit === undefined ? due : due.slice(0, limit));
   }
 
   async appendReviewLog(log: ReviewLog): Promise<void> {
-    if (!this.logs.has(log.id)) this.logs.set(log.id, structuredClone(log));
+    const parsed = reviewLogSchema.parse(log);
+    if (!this.logs.has(parsed.id)) this.logs.set(parsed.id, parsed);
   }
 
   async listReviewLogs(since?: string): Promise<ReviewLog[]> {
-    const sinceMs = since === undefined ? -Infinity : new Date(since).getTime();
+    const sinceIso = since === undefined ? undefined : canonical(since);
     const logs = [...this.logs.values()]
-      .filter((l) => new Date(l.reviewedAt).getTime() >= sinceMs)
-      .sort((a, b) => a.reviewedAt.localeCompare(b.reviewedAt));
+      .filter((l) => sinceIso === undefined || l.reviewedAt >= sinceIso)
+      .sort((a, b) => compare(a.reviewedAt, b.reviewedAt) || compare(a.id, b.id));
     return structuredClone(logs);
   }
 }
